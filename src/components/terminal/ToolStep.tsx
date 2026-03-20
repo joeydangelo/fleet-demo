@@ -1,8 +1,6 @@
 import React from "react";
 import { useCurrentFrame } from "remotion";
-import { GREEN, BOLD_TEXT } from "../../constants/theme";
-import { Dot, CollapsedOutput } from "../shared";
-import { FadeIn } from "../shared/FadeIn";
+import { FadeIn, ToolHeader, CollapsedOutput } from "../shared";
 
 type ToolStepProps = {
   label: string;
@@ -22,12 +20,7 @@ export const ToolStep: React.FC<ToolStepProps> = ({
   const frame = useCurrentFrame();
   return (
     <FadeIn start={start} style={{ marginBottom: 4, marginTop: 8, ...style }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        <Dot color={GREEN} />
-        <span style={{ fontWeight: 700, color: BOLD_TEXT, fontSize: 13 }}>
-          {label}
-        </span>
-      </div>
+      <ToolHeader label={label} />
       {frame >= start + delay && <CollapsedOutput lines={collapsedLines} />}
     </FadeIn>
   );

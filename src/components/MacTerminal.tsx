@@ -14,7 +14,8 @@ import {
   THIRD_PROMPT_SUBMIT,
   FLEETGO_BACKGROUND,
 } from "../constants/timing";
-import { MONO } from "../constants/theme";
+import { MONO, TEXT, GRAY, SYSTEM_FONT, SPRING_BOUNCE } from "../constants/theme";
+import { TrafficLights } from "./shared";
 import { TerminalContent } from "./TerminalContent";
 import { AskUserQuestion } from "./AskUserQuestion";
 import { InputCursor } from "./InputCursor";
@@ -22,59 +23,72 @@ import { InputCursor } from "./InputCursor";
 const INPUT_TEXT_STYLE: React.CSSProperties = {
   fontFamily: MONO,
   fontSize: 13,
-  color: "#3d3d3d",
+  color: TEXT,
   whiteSpace: "pre-wrap",
   wordBreak: "break-word",
 };
 
-function getInputContent(
-  promptVisible: boolean,
-  submitted: boolean,
-  secondPromptActive: boolean,
-  thirdPromptActive: boolean,
-): React.ReactNode {
-  if (promptVisible && !submitted) {
+type PromptState = "initial" | "first" | "second" | "third";
+
+function getPromptState(
+  frame: number,
+): PromptState {
+  if (frame >= THIRD_PROMPT_START && frame < THIRD_PROMPT_SUBMIT) return "third";
+  if (frame >= SECOND_PROMPT_START && frame < SECOND_PROMPT_SUBMIT) return "second";
+  if (frame >= PROMPT_START && frame < SUBMIT_FRAME) return "first";
+  return "initial";
+}
+
+const PROMPT_TEXTS: Record<Exclude<PromptState, "initial">, string> = {
+  first: PROMPT_TEXT,
+  second: SECOND_PROMPT_TEXT,
+  third: THIRD_PROMPT_TEXT,
+};
+
+function TerminalInput({ state }: { state: PromptState }): React.ReactElement {
+  if (state === "initial") {
     return (
-      <span style={INPUT_TEXT_STYLE}>
-        {PROMPT_TEXT}
-        <InputCursor />
-      </span>
-    );
-  }
-  if (secondPromptActive) {
-    return (
-      <span style={INPUT_TEXT_STYLE}>
-        {SECOND_PROMPT_TEXT}
-        <InputCursor />
-      </span>
-    );
-  }
-  if (thirdPromptActive) {
-    return (
-      <span style={INPUT_TEXT_STYLE}>
-        {THIRD_PROMPT_TEXT}
-        <InputCursor />
+      <span style={{ fontFamily: MONO, fontSize: 14, color: GRAY }}>
+        {">"} type a message or /help
       </span>
     );
   }
   return (
-    <span style={{ fontFamily: MONO, fontSize: 14, color: "#999" }}>
-      {">"} type a message or /help
+    <span style={INPUT_TEXT_STYLE}>
+      {PROMPT_TEXTS[state]}
+      <InputCursor />
+    </span>
+  );
+}
+
+function BashStatusBadge(): React.ReactElement {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+
+  const bashSpring = spring({
+    frame: frame - FLEETGO_BACKGROUND,
+    fps,
+    config: SPRING_BOUNCE,
+  });
+
+  return (
+    <span
+      style={{
+        display: "inline-block",
+        opacity: bashSpring,
+        transform: `translateX(${interpolate(bashSpring, [0, 1], [8, 0])}px)`,
+      }}
+    >
+      <span> · </span>
+      <span style={{ color: "#56b6c2" }}>1 bash</span>
+      <span> · ↓ to manage · esc to interrupt</span>
     </span>
   );
 }
 
 export const MacTerminal: React.FC = () => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-
-  const promptVisible = frame >= PROMPT_START;
-  const submitted = frame >= SUBMIT_FRAME;
-
-  const secondPromptActive =
-    frame >= SECOND_PROMPT_START && frame < SECOND_PROMPT_SUBMIT;
-  const thirdPromptActive =
-    frame >= THIRD_PROMPT_START && frame < THIRD_PROMPT_SUBMIT;
+  const promptState = getPromptState(frame);
 
   return (
     <div
@@ -103,40 +117,14 @@ export const MacTerminal: React.FC = () => {
           flexShrink: 0,
         }}
       >
-        <div style={{ display: "flex", gap: 8 }}>
-          <div
-            style={{
-              width: 12,
-              height: 12,
-              borderRadius: "50%",
-              backgroundColor: "#ff5f57",
-            }}
-          />
-          <div
-            style={{
-              width: 12,
-              height: 12,
-              borderRadius: "50%",
-              backgroundColor: "#febc2e",
-            }}
-          />
-          <div
-            style={{
-              width: 12,
-              height: 12,
-              borderRadius: "50%",
-              backgroundColor: "#28c840",
-            }}
-          />
-        </div>
+        <TrafficLights />
         <div
           style={{
             flex: 1,
             textAlign: "center",
             color: "#6b6560",
             fontSize: 13,
-            fontFamily:
-              '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif',
+            fontFamily: SYSTEM_FONT,
             fontWeight: 500,
             letterSpacing: 0.2,
           }}
@@ -155,7 +143,7 @@ export const MacTerminal: React.FC = () => {
           fontFamily: MONO,
           fontSize: 13,
           lineHeight: 1.6,
-          color: "#3d3d3d",
+          color: TEXT,
           overflow: "hidden",
           position: "relative",
         }}
@@ -181,7 +169,7 @@ export const MacTerminal: React.FC = () => {
               paddingBottom: 10,
             }}
           >
-            {getInputContent(promptVisible, submitted, secondPromptActive, thirdPromptActive)}
+            <TerminalInput state={promptState} />
           </div>
         </div>
 
@@ -202,26 +190,7 @@ export const MacTerminal: React.FC = () => {
         >
           <span style={{ whiteSpace: "pre" }}>
             <span style={{ color: "#FF6D84" }}>⏵⏵ bypass permissions on</span>
-            {frame >= FLEETGO_BACKGROUND && (() => {
-              const bashSpring = spring({
-                frame: frame - FLEETGO_BACKGROUND,
-                fps,
-                config: { damping: 18, stiffness: 120, mass: 0.8 },
-              });
-              return (
-                <span
-                  style={{
-                    display: "inline-block",
-                    opacity: bashSpring,
-                    transform: `translateX(${interpolate(bashSpring, [0, 1], [8, 0])}px)`,
-                  }}
-                >
-                  <span> · </span>
-                  <span style={{ color: "#56b6c2" }}>1 bash</span>
-                  <span> · ↓ to manage · esc to interrupt</span>
-                </span>
-              );
-            })()}
+            {frame >= FLEETGO_BACKGROUND && <BashStatusBadge />}
           </span>
         </div>
 

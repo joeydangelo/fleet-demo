@@ -6,7 +6,7 @@ import {
   YAML_WRITE_START,
   TIMER2_START,
 } from "../constants/timing";
-import { MONO } from "../constants/theme";
+import { MONO, SPRING_LAYOUT } from "../constants/theme";
 import {
   SPEC_FILENAME,
   SPEC_LINES,
@@ -28,15 +28,44 @@ import {
 import {
   SPEC_COLORS,
   YAML_COLORS,
+  YAML_KEY_COLOR,
+  YAML_COLON_COLOR,
+  YAML_STRING_COLOR,
+  YAML_PIPE_COLOR,
   specFontWeight,
   SYSTEM_FONT,
   STATUS_FONT,
 } from "./vscode/colors";
+import { TrafficLights } from "./shared";
 
 const LINE_HEIGHT = 20;
 const VISIBLE_LINES = 24;
 const CROSSFADE_FRAMES = 12;
 const YAML_SWAP_DELAY = 15;
+
+const EDITOR_LINE_BASE_STYLE: React.CSSProperties = {
+  fontFamily: MONO,
+  fontSize: 12,
+  lineHeight: "20px",
+  whiteSpace: "pre",
+  minHeight: 20,
+};
+
+function useEditorScroll(
+  localFrame: number,
+  scrollStart: number,
+  scrollEnd: number,
+  lineCount: number,
+): number {
+  const maxScroll = Math.max(0, lineCount * LINE_HEIGHT - VISIBLE_LINES * LINE_HEIGHT);
+  const duration = Math.max(30, scrollEnd - scrollStart);
+  return interpolate(
+    localFrame,
+    [scrollStart, scrollStart + duration],
+    [0, maxScroll],
+    { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.inOut(Easing.ease) },
+  );
+}
 
 export const VscodeEditor: React.FC = () => {
   const frame = useCurrentFrame();
@@ -48,7 +77,7 @@ export const VscodeEditor: React.FC = () => {
   const entrance = spring({
     frame: localFrame,
     fps,
-    config: { damping: 200 },
+    config: SPRING_LAYOUT,
   });
 
   const translateX = interpolate(entrance, [0, 1], [60, 0]);
@@ -64,30 +93,14 @@ export const VscodeEditor: React.FC = () => {
     { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
   );
 
-  // Spec scroll
   const specScrollStart = 25;
   const specScrollEnd = SECOND_PROMPT_START - SPEC_EDITOR_START - 20;
-  const specScrollDuration = Math.max(30, specScrollEnd - specScrollStart);
-  const specMaxScroll = Math.max(0, SPEC_LINES.length * LINE_HEIGHT - VISIBLE_LINES * LINE_HEIGHT);
-  const specScrollY = interpolate(
-    localFrame,
-    [specScrollStart, specScrollStart + specScrollDuration],
-    [0, specMaxScroll],
-    { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.inOut(Easing.ease) },
-  );
+  const specScrollY = useEditorScroll(localFrame, specScrollStart, specScrollEnd, SPEC_LINES.length);
 
-  // YAML scroll
   const yamlLocalFrame = frame - yamlSwapStart;
   const yamlScrollStart = CROSSFADE_FRAMES + 10;
   const yamlScrollEnd = TIMER2_START - yamlSwapStart - 10;
-  const yamlScrollDuration = yamlScrollEnd - yamlScrollStart;
-  const yamlMaxScroll = Math.max(0, YAML_LINES.length * LINE_HEIGHT - VISIBLE_LINES * LINE_HEIGHT);
-  const yamlScrollY = interpolate(
-    yamlLocalFrame,
-    [yamlScrollStart, yamlScrollStart + yamlScrollDuration],
-    [0, yamlMaxScroll],
-    { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.inOut(Easing.ease) },
-  );
+  const yamlScrollY = useEditorScroll(yamlLocalFrame, yamlScrollStart, yamlScrollEnd, YAML_LINES.length);
 
   const activeFilename = showingYaml ? YAML_FILENAME : SPEC_FILENAME;
 
@@ -118,11 +131,7 @@ export const VscodeEditor: React.FC = () => {
           flexShrink: 0,
         }}
       >
-        <div style={{ display: "flex", gap: 8 }}>
-          <div style={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: "#ff5f57" }} />
-          <div style={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: "#febc2e" }} />
-          <div style={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: "#28c840" }} />
-        </div>
+        <TrafficLights />
 
         <div
           style={{
@@ -234,64 +243,22 @@ export const VscodeEditor: React.FC = () => {
 
         {/* Spec content */}
         {crossfade < 1 && (
-          <div
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              display: "flex",
-              opacity: 1 - crossfade,
-            }}
-          >
-            <LineNumberGutter lines={SPEC_LINES.length} scrollY={specScrollY} />
-            <div style={{ flex: 1, overflow: "hidden" }}>
-              <div
-                style={{
-                  paddingTop: 26,
-                  paddingLeft: 12,
-                  paddingRight: 12,
-                  transform: `translateY(${-specScrollY}px)`,
-                }}
-              >
-                {SPEC_LINES.map((line, i) => (
-                  <SpecLineRow key={i} line={line} />
-                ))}
-              </div>
-            </div>
-          </div>
+          <EditorPanel
+            opacity={1 - crossfade}
+            lines={SPEC_LINES}
+            scrollY={specScrollY}
+            LineComponent={SpecLineRow}
+          />
         )}
 
         {/* YAML content */}
         {crossfade > 0 && (
-          <div
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              display: "flex",
-              opacity: crossfade,
-            }}
-          >
-            <LineNumberGutter lines={YAML_LINES.length} scrollY={yamlScrollY} />
-            <div style={{ flex: 1, overflow: "hidden" }}>
-              <div
-                style={{
-                  paddingTop: 26,
-                  paddingLeft: 12,
-                  paddingRight: 12,
-                  transform: `translateY(${-yamlScrollY}px)`,
-                }}
-              >
-                {YAML_LINES.map((line, i) => (
-                  <YamlLineRow key={i} line={line} />
-                ))}
-              </div>
-            </div>
-          </div>
+          <EditorPanel
+            opacity={crossfade}
+            lines={YAML_LINES}
+            scrollY={yamlScrollY}
+            LineComponent={YamlLineRow}
+          />
         )}
       </div>
 
@@ -340,6 +307,8 @@ export const VscodeEditor: React.FC = () => {
   );
 };
 
+// --- Sub-components ---
+
 const StatusBarItem: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <span
     style={{
@@ -351,6 +320,45 @@ const StatusBarItem: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     {children}
   </span>
 );
+
+type EditorPanelProps<T> = {
+  opacity: number;
+  lines: T[];
+  scrollY: number;
+  LineComponent: React.FC<{ line: T }>;
+};
+
+function EditorPanel<T>({ opacity, lines, scrollY, LineComponent }: EditorPanelProps<T>): React.ReactElement {
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        display: "flex",
+        opacity,
+      }}
+    >
+      <LineNumberGutter lines={lines.length} scrollY={scrollY} />
+      <div style={{ flex: 1, overflow: "hidden" }}>
+        <div
+          style={{
+            paddingTop: 26,
+            paddingLeft: 12,
+            paddingRight: 12,
+            transform: `translateY(${-scrollY}px)`,
+          }}
+        >
+          {lines.map((line, i) => (
+            <LineComponent key={i} line={line} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const LineNumberGutter: React.FC<{ lines: number; scrollY: number }> = ({
   lines,
@@ -390,13 +398,9 @@ const SpecLineRow: React.FC<{ line: { text: string; style: SpecLineStyle } }> = 
 }) => (
   <div
     style={{
-      fontFamily: MONO,
-      fontSize: 12,
-      lineHeight: "20px",
+      ...EDITOR_LINE_BASE_STYLE,
       color: SPEC_COLORS[line.style],
       fontWeight: specFontWeight(line.style),
-      whiteSpace: "pre",
-      minHeight: 20,
     }}
   >
     {line.style === "list" && line.text.startsWith("- ") ? (
@@ -413,38 +417,18 @@ const SpecLineRow: React.FC<{ line: { text: string; style: SpecLineStyle } }> = 
 const YamlLineRow: React.FC<{ line: { text: string; style: YamlLineStyle } }> = ({
   line,
 }) => {
-  const baseStyle: React.CSSProperties = {
-    fontFamily: MONO,
-    fontSize: 12,
-    lineHeight: "20px",
-    whiteSpace: "pre",
-    minHeight: 20,
-  };
-
-  if (line.style === "blank") {
-    return <div style={{ ...baseStyle, color: "transparent" }}>{" "}</div>;
-  }
-
-  if (line.style === "comment") {
-    return <div style={{ ...baseStyle, color: YAML_COLORS.comment }}>{line.text}</div>;
-  }
-
-  if (line.style === "key") {
-    return <div style={{ ...baseStyle, color: YAML_COLORS.key }}>{line.text}</div>;
-  }
-
   if (line.style === "key-value") {
     const colonIdx = line.text.indexOf(": ");
     if (colonIdx === -1) {
-      return <div style={{ ...baseStyle, color: YAML_COLORS.key }}>{line.text}</div>;
+      return <div style={{ ...EDITOR_LINE_BASE_STYLE, color: YAML_COLORS.key }}>{line.text}</div>;
     }
     const key = line.text.slice(0, colonIdx);
     const value = line.text.slice(colonIdx + 2);
-    const valueColor = value === "|" ? "#a074c4" : "#ce9178";
+    const valueColor = value === "|" ? YAML_PIPE_COLOR : YAML_STRING_COLOR;
     return (
-      <div style={baseStyle}>
-        <span style={{ color: "#9cdcfe" }}>{key}</span>
-        <span style={{ color: "#d4d4d4" }}>: </span>
+      <div style={EDITOR_LINE_BASE_STYLE}>
+        <span style={{ color: YAML_KEY_COLOR }}>{key}</span>
+        <span style={{ color: YAML_COLON_COLOR }}>: </span>
         <span style={{ color: valueColor }}>{value}</span>
       </div>
     );
@@ -453,19 +437,23 @@ const YamlLineRow: React.FC<{ line: { text: string; style: YamlLineStyle } }> = 
   if (line.style === "list-item") {
     const dashIdx = line.text.indexOf("- ");
     if (dashIdx === -1) {
-      return <div style={{ ...baseStyle, color: YAML_COLORS["list-item"] }}>{line.text}</div>;
+      return <div style={{ ...EDITOR_LINE_BASE_STYLE, color: YAML_COLORS["list-item"] }}>{line.text}</div>;
     }
     const indent = line.text.slice(0, dashIdx);
     const value = line.text.slice(dashIdx + 2);
     return (
-      <div style={baseStyle}>
+      <div style={EDITOR_LINE_BASE_STYLE}>
         <span>{indent}</span>
-        <span style={{ color: "#d4d4d4" }}>- </span>
-        <span style={{ color: "#ce9178" }}>{value}</span>
+        <span style={{ color: YAML_COLON_COLOR }}>- </span>
+        <span style={{ color: YAML_STRING_COLOR }}>{value}</span>
       </div>
     );
   }
 
-  // prompt-body
-  return <div style={{ ...baseStyle, color: YAML_COLORS["prompt-body"] }}>{line.text}</div>;
+  // All other styles: comment, key, blank, prompt-body
+  return (
+    <div style={{ ...EDITOR_LINE_BASE_STYLE, color: YAML_COLORS[line.style] }}>
+      {line.style === "blank" ? " " : line.text}
+    </div>
+  );
 };

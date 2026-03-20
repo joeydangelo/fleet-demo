@@ -6,6 +6,7 @@ import {
   SPEC_EDITOR_START,
   EDITOR_EXIT_START,
 } from "./constants/timing";
+import { SPRING_LAYOUT } from "./constants/theme";
 
 export const MyComposition: React.FC = () => {
   const frame = useCurrentFrame();
@@ -17,7 +18,7 @@ export const MyComposition: React.FC = () => {
     ? spring({
         frame: repositionFrame,
         fps,
-        config: { damping: 200 },
+        config: SPRING_LAYOUT,
       })
     : 0;
 
@@ -27,7 +28,7 @@ export const MyComposition: React.FC = () => {
     ? spring({
         frame: restoreFrame,
         fps,
-        config: { damping: 200 },
+        config: SPRING_LAYOUT,
       })
     : 0;
 

@@ -3,6 +3,7 @@ import { useCurrentFrame, useVideoConfig, interpolate, spring } from "remotion";
 import { ASK_USER_START, ASK_USER_END } from "../../constants/timing";
 import {
   MONO,
+  SPRING_BOUNCE,
   AUQ_BG,
   AUQ_BORDER,
   AUQ_TEXT,
@@ -65,7 +66,7 @@ export const AskUserQuestion: React.FC = () => {
   const expandProgress = spring({
     frame: localFrame,
     fps,
-    config: { damping: 18, stiffness: 120, mass: 0.8 },
+    config: SPRING_BOUNCE,
   });
   const collapseProgress = spring({
     frame: frame - (ASK_USER_END - 12),

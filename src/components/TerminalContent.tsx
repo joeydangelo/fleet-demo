@@ -1,5 +1,5 @@
-import React, { useMemo } from "react";
-import { useCurrentFrame, interpolate } from "remotion";
+import React from "react";
+import { useCurrentFrame } from "remotion";
 import {
   PROMPT_TEXT,
   SUBMIT_FRAME,
@@ -29,14 +29,50 @@ import {
   TIMER2_START,
   THIRD_PROMPT_TEXT,
   THIRD_PROMPT_SUBMIT,
-  BASH_FLEETGO_START,
   FLEETGO_BACKGROUND,
 } from "../constants/timing";
-import { GREEN, BLUE, GRAY, DIM, TEXT, BOLD_TEXT, ORANGE } from "../constants/theme";
-import { Dot, SubLine, StatusLine, ScoutRow } from "./shared";
-import { FadeIn } from "./shared/FadeIn";
-import { ToolStep, PromptLine, useElapsedSeconds, useTokenCounter } from "./terminal";
-import { useTerminalScroll } from "./terminal/useTerminalScroll";
+import { GREEN, BLUE, GRAY, DIM, TEXT, TOOL_INDENT } from "../constants/theme";
+import {
+  Dot,
+  SubLine,
+  StatusLine,
+  FadeIn,
+  ToolHeader,
+  SummaryBlock,
+  SummaryParagraph,
+  CrunchedTimer,
+} from "./shared";
+import {
+  ToolStep,
+  PromptLine,
+  useElapsedSeconds,
+  useTokenCounter,
+  useTerminalScroll,
+  ScoutRow,
+  FleetGoBlock,
+} from "./terminal";
+import type { ScoutData } from "./terminal";
+
+// Static token rate segments — no deps, so hoisted to module level
+const PHASE1_SEGMENTS = [
+  { startFrame: SKILL_START, endFrame: ASK_USER_START, rate: 420 },
+  { startFrame: ASK_USER_START, endFrame: ASK_USER_END, rate: 40 },
+  { startFrame: ASK_USER_END, endFrame: Infinity, rate: 420 },
+];
+
+const PHASE2_SEGMENTS = [
+  { startFrame: SECOND_PROMPT_SUBMIT, endFrame: Infinity, rate: 480 },
+];
+
+const PHASE3_SEGMENTS = [
+  { startFrame: THIRD_PROMPT_SUBMIT, endFrame: Infinity, rate: 3 },
+];
+
+const SCOUT_DATA: (ScoutData & { isLast: boolean })[] = [
+  { name: "Scout API route handlers and middleware", toolUses: 34, tokens: "71.8k", doneFrame: SCOUT1_DONE, isLast: false },
+  { name: "Scout existing auth and request pipeline", toolUses: 42, tokens: "82.2k", doneFrame: SCOUT2_DONE, isLast: false },
+  { name: "Scout Redis config and caching layer", toolUses: 35, tokens: "77.3k", doneFrame: SCOUT3_DONE, isLast: true },
+];
 
 export const TerminalContent: React.FC = () => {
   const frame = useCurrentFrame();
@@ -44,36 +80,19 @@ export const TerminalContent: React.FC = () => {
   const submitted = frame >= SUBMIT_FRAME;
 
   const runningSeconds = useElapsedSeconds(SKILL_START);
-
-  const phase1Segments = useMemo(() => [
-    { startFrame: SKILL_START, endFrame: ASK_USER_START, rate: 420 },
-    { startFrame: ASK_USER_START, endFrame: ASK_USER_END, rate: 40 },
-    { startFrame: ASK_USER_END, endFrame: Infinity, rate: 420 },
-  ], []);
-  const runningTokens = useTokenCounter(SKILL_START, phase1Segments);
+  const runningTokens = useTokenCounter(SKILL_START, PHASE1_SEGMENTS);
 
   const phase2Seconds = useElapsedSeconds(SECOND_PROMPT_SUBMIT);
-
-  const phase2Segments = useMemo(() => [
-    { startFrame: SECOND_PROMPT_SUBMIT, endFrame: Infinity, rate: 480 },
-  ], []);
-  const phase2Tokens = useTokenCounter(SECOND_PROMPT_SUBMIT, phase2Segments);
+  const phase2Tokens = useTokenCounter(SECOND_PROMPT_SUBMIT, PHASE2_SEGMENTS);
 
   const phase3Seconds = useElapsedSeconds(THIRD_PROMPT_SUBMIT);
-
-  const phase3Segments = useMemo(() => [
-    { startFrame: THIRD_PROMPT_SUBMIT, endFrame: Infinity, rate: 3 },
-  ], []);
-  const phase3Tokens = useTokenCounter(THIRD_PROMPT_SUBMIT, phase3Segments, 105);
+  const phase3Tokens = useTokenCounter(THIRD_PROMPT_SUBMIT, PHASE3_SEGMENTS, 105);
 
   const scrollOffset = useTerminalScroll();
 
   if (!submitted) return null;
 
-  const scoutsDoneCount =
-    (frame >= SCOUT1_DONE ? 1 : 0) +
-    (frame >= SCOUT2_DONE ? 1 : 0) +
-    (frame >= SCOUT3_DONE ? 1 : 0);
+  const scoutsDoneCount = SCOUT_DATA.filter((s) => frame >= s.doneFrame).length;
   const allScoutsDone = scoutsDoneCount === 3;
 
   return (
@@ -82,12 +101,7 @@ export const TerminalContent: React.FC = () => {
       <PromptLine text={PROMPT_TEXT} />
 
       <FadeIn start={SKILL_START} style={{ marginBottom: 4 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <Dot color={GREEN} />
-          <span style={{ fontWeight: 700, color: BOLD_TEXT, fontSize: 13 }}>
-            Skill(orchestrator)
-          </span>
-        </div>
+        <ToolHeader label="Skill(orchestrator)" />
         {frame >= SKILL_START + 12 && (
           <SubLine>Successfully loaded skill · 1 tool allowed</SubLine>
         )}
@@ -108,8 +122,8 @@ export const TerminalContent: React.FC = () => {
               }}
             >
               {allScoutsDone
-                ? `3 Explore agents finished`
-                : `Running 3 Explore agents…`}{" "}
+                ? "3 Explore agents finished"
+                : "Running 3 Explore agents…"}{" "}
               <span style={{ color: DIM, fontWeight: 400 }}>
                 (ctrl+o to expand)
               </span>
@@ -118,36 +132,19 @@ export const TerminalContent: React.FC = () => {
 
           <div
             style={{
-              paddingLeft: 22,
+              paddingLeft: TOOL_INDENT,
               fontSize: 12,
               lineHeight: 1.5,
               marginTop: 4,
             }}
           >
-            <ScoutRow
-              name="Scout API route handlers and middleware"
-              toolUses={34}
-              tokens="71.8k"
-              startFrame={SCOUTS_START}
-              doneFrame={SCOUT1_DONE}
-              isLast={false}
-            />
-            <ScoutRow
-              name="Scout existing auth and request pipeline"
-              toolUses={42}
-              tokens="82.2k"
-              startFrame={SCOUTS_START}
-              doneFrame={SCOUT2_DONE}
-              isLast={false}
-            />
-            <ScoutRow
-              name="Scout Redis config and caching layer"
-              toolUses={35}
-              tokens="77.3k"
-              startFrame={SCOUTS_START}
-              doneFrame={SCOUT3_DONE}
-              isLast={true}
-            />
+            {SCOUT_DATA.map((scout) => (
+              <ScoutRow
+                key={scout.name}
+                startFrame={SCOUTS_START}
+                {...scout}
+              />
+            ))}
           </div>
         </div>
       )}
@@ -156,28 +153,15 @@ export const TerminalContent: React.FC = () => {
         start={ASSESSMENT_START}
         style={{ marginBottom: 4, marginTop: 12 }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <Dot color={GREEN} />
-          <span style={{ fontWeight: 700, color: BOLD_TEXT, fontSize: 13 }}>
-            Assessment
-          </span>
-        </div>
+        <ToolHeader label="Assessment" />
         {frame >= ASSESSMENT_START + 12 && (
-          <div
-            style={{
-              paddingLeft: 22,
-              fontSize: 12,
-              color: TEXT,
-              lineHeight: 1.7,
-              maxWidth: 440,
-            }}
-          >
-            <p style={{ margin: "4px 0" }}>
+          <SummaryBlock>
+            <SummaryParagraph>
               Found 14 route handlers across 3 routers, Redis already in
               deps. Auth middleware extracts user context — ideal hook
               point for per-user tracking.
-            </p>
-          </div>
+            </SummaryParagraph>
+          </SummaryBlock>
         )}
       </FadeIn>
 
@@ -186,15 +170,10 @@ export const TerminalContent: React.FC = () => {
       <ToolStep label="Bash(template plan-spec)" start={BASH_TEMPLATE_START} collapsedLines={37} />
 
       <FadeIn start={ASK_USER_END} style={{ marginBottom: 4, marginTop: 12 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <Dot color={GREEN} />
-          <span style={{ fontWeight: 700, color: BOLD_TEXT, fontSize: 13 }}>
-            User answered Claude's questions:
-          </span>
-        </div>
+        <ToolHeader label="User answered Claude's questions:" />
         <div
           style={{
-            paddingLeft: 22,
+            paddingLeft: TOOL_INDENT,
             fontSize: 12,
             color: GRAY,
             lineHeight: 1.8,
@@ -215,12 +194,7 @@ export const TerminalContent: React.FC = () => {
         start={SPEC_WRITE_START}
         style={{ marginBottom: 4, marginTop: 8 }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <Dot color={GREEN} />
-          <span style={{ fontWeight: 700, color: BOLD_TEXT, fontSize: 13 }}>
-            Write(.fleet/specs/spec-2026-03-20-rate-limiting.md)
-          </span>
-        </div>
+        <ToolHeader label="Write(.fleet/specs/spec-2026-03-20-rate-limiting.md)" />
         <SubLine>Wrote 198 lines</SubLine>
       </FadeIn>
 
@@ -228,36 +202,23 @@ export const TerminalContent: React.FC = () => {
         start={SPEC_SUMMARY_START}
         style={{ marginBottom: 4, marginTop: 12 }}
       >
-        <div
-          style={{
-            paddingLeft: 22,
-            fontSize: 12,
-            color: TEXT,
-            lineHeight: 1.7,
-            maxWidth: 440,
-          }}
-        >
-          <p style={{ margin: "4px 0" }}>
+        <SummaryBlock>
+          <SummaryParagraph>
             Sliding window per-user, per-endpoint across all 14 routes.
             Single middleware after auth — no per-handler wiring.
-          </p>
-          <p style={{ margin: "4px 0" }}>
+          </SummaryParagraph>
+          <SummaryParagraph>
             Redis failure → fail open. 429 + Retry-After when exceeded.
             X-RateLimit-* headers on every response.
-          </p>
-          <p style={{ margin: "4px 0" }}>
+          </SummaryParagraph>
+          <SummaryParagraph>
             Want me to proceed to task decomposition, or adjust the spec?
-          </p>
-        </div>
+          </SummaryParagraph>
+        </SummaryBlock>
       </FadeIn>
 
       <FadeIn start={TIMER1_START} style={{ marginTop: 12 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ color: ORANGE, fontSize: 14, marginRight: 6 }}>✻</span>
-          <span style={{ color: ORANGE, fontWeight: 600, fontSize: 12 }}>
-            Crunched for 3m 38s
-          </span>
-        </div>
+        <CrunchedTimer duration="3m 38s" />
       </FadeIn>
 
       {frame >= SKILL_START + 20 &&
@@ -284,12 +245,7 @@ export const TerminalContent: React.FC = () => {
         start={YAML_WRITE_START}
         style={{ marginBottom: 4, marginTop: 8 }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <Dot color={GREEN} />
-          <span style={{ fontWeight: 700, color: BOLD_TEXT, fontSize: 13 }}>
-            Write(.fleet/fleet.yaml)
-          </span>
-        </div>
+        <ToolHeader label="Write(.fleet/fleet.yaml)" />
         <SubLine>Wrote 46 lines</SubLine>
       </FadeIn>
 
@@ -297,34 +253,21 @@ export const TerminalContent: React.FC = () => {
         start={FINAL_SUMMARY_START}
         style={{ marginBottom: 4, marginTop: 12 }}
       >
-        <div
-          style={{
-            paddingLeft: 22,
-            fontSize: 12,
-            color: TEXT,
-            lineHeight: 1.7,
-            maxWidth: 440,
-          }}
-        >
-          <p style={{ margin: "4px 0" }}>
+        <SummaryBlock>
+          <SummaryParagraph>
             Two parallel tasks — middleware owns the sliding window limiter
             and Redis layer, config owns route-level limit definitions and
             response headers.
-          </p>
-          <p style={{ margin: "4px 0" }}>
+          </SummaryParagraph>
+          <SummaryParagraph>
             Ready to run fleet go to launch the builders. Want me to kick
             it off?
-          </p>
-        </div>
+          </SummaryParagraph>
+        </SummaryBlock>
       </FadeIn>
 
       <FadeIn start={TIMER2_START} style={{ marginTop: 12 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ color: ORANGE, fontSize: 14, marginRight: 6 }}>✻</span>
-          <span style={{ color: ORANGE, fontWeight: 600, fontSize: 12 }}>
-            Crunched for 5m 52s
-          </span>
-        </div>
+        <CrunchedTimer duration="5m 52s" />
       </FadeIn>
 
       {frame >= SECOND_PROMPT_SUBMIT + 15 &&
@@ -343,87 +286,7 @@ export const TerminalContent: React.FC = () => {
         </div>
       )}
 
-      <FadeIn
-        start={BASH_FLEETGO_START}
-        style={{ marginBottom: 4, marginTop: 8 }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <Dot color={GREEN} />
-          <span style={{ fontWeight: 700, color: BOLD_TEXT, fontSize: 13 }}>
-            Bash(fleet go)
-          </span>
-        </div>
-
-        {frame < FLEETGO_BACKGROUND && (
-          <div
-            style={{
-              paddingLeft: 22,
-              fontSize: 12,
-              lineHeight: 1.7,
-              marginTop: 4,
-              opacity: interpolate(
-                frame,
-                [FLEETGO_BACKGROUND - 8, FLEETGO_BACKGROUND],
-                [1, 0],
-                { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
-              ),
-            }}
-          >
-            <div style={{ color: DIM }}>
-              {"  "}┌{"  "}
-              <span style={{ color: TEXT, fontWeight: 600 }}>fleet go</span>
-            </div>
-            <div style={{ color: DIM }}>
-              {"  "}│{"  "}
-              <span style={{ color: GRAY }}>
-                target: feature/rate-limiting · 2 tasks
-              </span>
-            </div>
-            <FadeIn start={BASH_FLEETGO_START + 18} style={{}}>
-              <div style={{ color: DIM }}>
-                {"  "}◇{"  "}
-                <span style={{ color: TEXT, fontWeight: 600 }}>fleet up</span>
-              </div>
-              <div style={{ color: DIM }}>
-                {"  "}│{"  "}
-                <span style={{ color: GRAY }}>middleware · config</span>
-              </div>
-            </FadeIn>
-            <FadeIn start={BASH_FLEETGO_START + 36} style={{}}>
-              <div style={{ color: DIM }}>
-                {"  "}◇{"  "}
-                <span style={{ color: TEXT, fontWeight: 600 }}>
-                  fleet launch
-                </span>
-              </div>
-              <div style={{ color: DIM }}>
-                {"  "}│{"  "}
-                <span style={{ color: GRAY }}>2 agents spawned</span>
-              </div>
-            </FadeIn>
-            <FadeIn start={BASH_FLEETGO_START + 50} style={{}}>
-              <div style={{ color: DIM, marginTop: 4 }}>
-                {"  "}(ctrl+b to run in background)
-              </div>
-            </FadeIn>
-          </div>
-        )}
-
-        {frame >= FLEETGO_BACKGROUND && (
-          <div
-            style={{
-              opacity: interpolate(
-                frame,
-                [FLEETGO_BACKGROUND, FLEETGO_BACKGROUND + 8],
-                [0, 1],
-                { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
-              ),
-            }}
-          >
-            <SubLine>Running in the background (↓ to manage)</SubLine>
-          </div>
-        )}
-      </FadeIn>
+      <FleetGoBlock />
 
       {frame >= FLEETGO_BACKGROUND + 10 &&
         phase3Seconds &&
