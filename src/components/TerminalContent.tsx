@@ -642,7 +642,7 @@ export const TerminalContent: React.FC = () => {
         style={{ marginBottom: 4, marginTop: 8 }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <Dot color={frame >= FLEETGO_BACKGROUND ? GREEN : BLUE} />
+          <Dot color={GREEN} />
           <span style={{ fontWeight: 700, color: BOLD_TEXT, fontSize: 13 }}>
             Bash(fleet go)
           </span>
