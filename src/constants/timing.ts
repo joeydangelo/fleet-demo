@@ -26,5 +26,4 @@ export const ASK_USER_START = BASH_TEMPLATE_START + 30;
 export const ASK_USER_END = ASK_USER_START + 200; // ~6.7 seconds (2 questions + submit)
 
 export const SPEC_WRITE_START = ASK_USER_END + 20;
-export const SUMMARY_START = SPEC_WRITE_START + 30;
-export const TIMER_START = SUMMARY_START + 60;
+export const TIMER_START = SPEC_WRITE_START + 30;

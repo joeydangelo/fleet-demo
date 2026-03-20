@@ -99,7 +99,7 @@ export const MacTerminal: React.FC = () => {
             letterSpacing: 0.2,
           }}
         >
-          claude
+          fleet
         </div>
         <div style={{ width: 52 }} />
       </div>
