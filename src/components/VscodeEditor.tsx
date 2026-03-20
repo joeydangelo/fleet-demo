@@ -1,15 +1,25 @@
 import React from "react";
 import { useCurrentFrame, useVideoConfig, spring, interpolate, Easing } from "remotion";
-import { SPEC_EDITOR_START, SECOND_PROMPT_START } from "../constants/timing";
+import {
+  SPEC_EDITOR_START,
+  SECOND_PROMPT_START,
+  YAML_WRITE_START,
+  TIMER2_START,
+} from "../constants/timing";
 import { MONO } from "../constants/theme";
 import {
   SPEC_FILENAME,
   SPEC_LINES,
   type SpecLineStyle,
 } from "../constants/specContent";
+import {
+  YAML_FILENAME,
+  YAML_LINES,
+  type YamlLineStyle,
+} from "../constants/yamlContent";
 
 /** Color mapping for spec line styles — dark VSCode-like theme */
-const STYLE_COLORS: Record<SpecLineStyle, string> = {
+const SPEC_COLORS: Record<SpecLineStyle, string> = {
   frontmatter: "#ce9178",
   h1: "#569cd6",
   h2: "#569cd6",
@@ -21,8 +31,17 @@ const STYLE_COLORS: Record<SpecLineStyle, string> = {
   "code-value": "#ce9178",
 };
 
-/** Returns font weight per style */
-function fontWeightFor(style: SpecLineStyle): number {
+/** Color mapping for YAML line styles */
+const YAML_COLORS: Record<YamlLineStyle, string> = {
+  comment: "#6a9955",
+  key: "#9cdcfe",
+  "key-value": "#9cdcfe",
+  "list-item": "#ce9178",
+  "prompt-body": "#ce9178",
+  blank: "transparent",
+};
+
+function specFontWeight(style: SpecLineStyle): number {
   if (style === "h1") return 700;
   if (style === "h2") return 600;
   return 400;
@@ -32,6 +51,14 @@ function fontWeightFor(style: SpecLineStyle): number {
 const MarkdownIcon: React.FC = () => (
   <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
     <path d="M6 2h4v6h3l-5 6-5-6h3V2z" fill="#519aba" />
+  </svg>
+);
+
+/** YAML file icon — purple exclamation mark */
+const YamlIcon: React.FC = () => (
+  <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+    <rect x="7" y="2" width="2" height="8" rx="1" fill="#a074c4" />
+    <rect x="7" y="12" width="2" height="2" rx="1" fill="#a074c4" />
   </svg>
 );
 
@@ -54,6 +81,17 @@ const BreadcrumbChevron: React.FC = () => (
   <span style={{ color: "#666", fontSize: 10, margin: "0 1px" }}>›</span>
 );
 
+const SYSTEM_FONT =
+  '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif';
+const STATUS_FONT =
+  '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
+
+const LINE_HEIGHT = 20;
+const VISIBLE_LINES = 24;
+
+/** Duration of the crossfade between spec and yaml content */
+const CROSSFADE_FRAMES = 12;
+
 export const VscodeEditor: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -71,20 +109,48 @@ export const VscodeEditor: React.FC = () => {
   const translateX = interpolate(entrance, [0, 1], [60, 0]);
   const opacity = entrance;
 
-  // Smooth scroll through spec — finishes just before user types approval
-  const SCROLL_START = 25; // frames after editor appears
-  const SCROLL_END = SECOND_PROMPT_START - SPEC_EDITOR_START - 20;
-  const SCROLL_DURATION = SCROLL_END - SCROLL_START;
-  const LINE_HEIGHT = 20;
-  const VISIBLE_LINES = 24; // approximate visible lines in editor area
-  const totalContentHeight = SPEC_LINES.length * LINE_HEIGHT;
-  const maxScroll = Math.max(0, totalContentHeight - VISIBLE_LINES * LINE_HEIGHT);
-  const scrollY = interpolate(
+  // --- Which file is active? ---
+  // Small delay so the CLI "Write" line registers before the editor swaps
+  const YAML_SWAP_DELAY = 15;
+  const yamlSwapStart = YAML_WRITE_START + YAML_SWAP_DELAY;
+  const showingYaml = frame >= yamlSwapStart;
+
+  // Crossfade progress: 0 = spec, 1 = yaml
+  const crossfade = interpolate(
+    frame,
+    [yamlSwapStart, yamlSwapStart + CROSSFADE_FRAMES],
+    [0, 1],
+    { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
+  );
+
+  // --- Spec scroll ---
+  const specScrollStart = 25;
+  const specScrollEnd = SECOND_PROMPT_START - SPEC_EDITOR_START - 20;
+  const specScrollDuration = specScrollEnd - specScrollStart;
+  const specContentHeight = SPEC_LINES.length * LINE_HEIGHT;
+  const specMaxScroll = Math.max(0, specContentHeight - VISIBLE_LINES * LINE_HEIGHT);
+  const specScrollY = interpolate(
     localFrame,
-    [SCROLL_START, SCROLL_START + SCROLL_DURATION],
-    [0, maxScroll],
+    [specScrollStart, specScrollStart + specScrollDuration],
+    [0, specMaxScroll],
     { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.inOut(Easing.ease) },
   );
+
+  // --- YAML scroll ---
+  const yamlLocalFrame = frame - yamlSwapStart;
+  const yamlScrollStart = CROSSFADE_FRAMES + 10;
+  const yamlScrollEnd = TIMER2_START - yamlSwapStart - 10;
+  const yamlScrollDuration = yamlScrollEnd - yamlScrollStart;
+  const yamlContentHeight = YAML_LINES.length * LINE_HEIGHT;
+  const yamlMaxScroll = Math.max(0, yamlContentHeight - VISIBLE_LINES * LINE_HEIGHT);
+  const yamlScrollY = interpolate(
+    yamlLocalFrame,
+    [yamlScrollStart, yamlScrollStart + yamlScrollDuration],
+    [0, yamlMaxScroll],
+    { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.inOut(Easing.ease) },
+  );
+
+  const activeFilename = showingYaml ? YAML_FILENAME : SPEC_FILENAME;
 
   return (
     <div
@@ -115,30 +181,9 @@ export const VscodeEditor: React.FC = () => {
       >
         {/* Traffic lights */}
         <div style={{ display: "flex", gap: 8 }}>
-          <div
-            style={{
-              width: 12,
-              height: 12,
-              borderRadius: "50%",
-              backgroundColor: "#ff5f57",
-            }}
-          />
-          <div
-            style={{
-              width: 12,
-              height: 12,
-              borderRadius: "50%",
-              backgroundColor: "#febc2e",
-            }}
-          />
-          <div
-            style={{
-              width: 12,
-              height: 12,
-              borderRadius: "50%",
-              backgroundColor: "#28c840",
-            }}
-          />
+          <div style={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: "#ff5f57" }} />
+          <div style={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: "#febc2e" }} />
+          <div style={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: "#28c840" }} />
         </div>
 
         {/* Centered title */}
@@ -148,15 +193,14 @@ export const VscodeEditor: React.FC = () => {
             textAlign: "center",
             color: "#999",
             fontSize: 12,
-            fontFamily:
-              '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif',
+            fontFamily: SYSTEM_FONT,
             fontWeight: 500,
           }}
         >
-          {SPEC_FILENAME}
+          {activeFilename}
         </div>
 
-        {/* Right icons — layout/grid buttons */}
+        {/* Right icons */}
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <TitleBarIcon d="M3 3h4v4H3zM9 3h4v4H9zM3 9h4v4H3zM9 9h4v4H9z" />
           <TitleBarIcon d="M3 3h4v10H3zM9 3h4v10H9z" />
@@ -165,7 +209,7 @@ export const VscodeEditor: React.FC = () => {
         </div>
       </div>
 
-      {/* Tab strip — blends smoothly with title bar */}
+      {/* Tab strip */}
       <div
         style={{
           height: 36,
@@ -186,47 +230,31 @@ export const VscodeEditor: React.FC = () => {
             backgroundColor: "#1e1e1e",
           }}
         >
-          <MarkdownIcon />
+          {showingYaml ? <YamlIcon /> : <MarkdownIcon />}
           <span
             style={{
               color: "#cccccc",
               fontSize: 12,
-              fontFamily:
-                '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif',
+              fontFamily: SYSTEM_FONT,
               fontWeight: 400,
               letterSpacing: 0.2,
             }}
           >
-            {SPEC_FILENAME}
+            {activeFilename}
           </span>
-          <span
-            style={{
-              color: "#888",
-              fontSize: 14,
-              marginLeft: 4,
-              lineHeight: 1,
-            }}
-          >
+          <span style={{ color: "#888", fontSize: 14, marginLeft: 4, lineHeight: 1 }}>
             ×
           </span>
         </div>
 
-        {/* Right side icons — split view + more */}
         <div style={{ flex: 1 }} />
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            paddingRight: 14,
-          }}
-        >
+        <div style={{ display: "flex", alignItems: "center", gap: 10, paddingRight: 14 }}>
           <TabBarIcon d="M3 3h4v10H3zM9 3h4v10H9z" />
           <span style={{ color: "#888", fontSize: 16, letterSpacing: 2, lineHeight: 1 }}>···</span>
         </div>
       </div>
 
-      {/* Editor content */}
+      {/* Editor content — crossfade between spec and yaml */}
       <div
         style={{
           flex: 1,
@@ -236,7 +264,7 @@ export const VscodeEditor: React.FC = () => {
           position: "relative",
         }}
       >
-        {/* Breadcrumb — floats above first line, no border */}
+        {/* Breadcrumb */}
         <div
           style={{
             position: "absolute",
@@ -248,98 +276,98 @@ export const VscodeEditor: React.FC = () => {
             alignItems: "center",
             gap: 4,
             paddingLeft: 12,
-            fontFamily:
-              '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif',
+            fontFamily: SYSTEM_FONT,
             fontSize: 11,
             zIndex: 1,
             backgroundColor: "#1e1e1e",
           }}
         >
-          <span style={{ color: "#aaa" }}>fleet</span>
-          <BreadcrumbChevron />
-          <span style={{ color: "#aaa" }}>.fleet</span>
-          <BreadcrumbChevron />
-          <span style={{ color: "#aaa" }}>specs</span>
-          <BreadcrumbChevron />
-          <span style={{ color: "#ccc" }}>{SPEC_FILENAME}</span>
-          <BreadcrumbChevron />
-          <span style={{ color: "#888" }}>…</span>
+          {showingYaml ? (
+            <>
+              <span style={{ color: "#aaa" }}>fleet</span>
+              <BreadcrumbChevron />
+              <span style={{ color: "#aaa" }}>.fleet</span>
+              <BreadcrumbChevron />
+              <span style={{ color: "#ccc" }}>{YAML_FILENAME}</span>
+              <BreadcrumbChevron />
+              <span style={{ color: "#888" }}>…</span>
+            </>
+          ) : (
+            <>
+              <span style={{ color: "#aaa" }}>fleet</span>
+              <BreadcrumbChevron />
+              <span style={{ color: "#aaa" }}>.fleet</span>
+              <BreadcrumbChevron />
+              <span style={{ color: "#aaa" }}>specs</span>
+              <BreadcrumbChevron />
+              <span style={{ color: "#ccc" }}>{SPEC_FILENAME}</span>
+              <BreadcrumbChevron />
+              <span style={{ color: "#888" }}>…</span>
+            </>
+          )}
         </div>
 
-        {/* Line number gutter */}
-        <div
-          style={{
-            width: 44,
-            backgroundColor: "#1e1e1e",
-            paddingRight: 8,
-            textAlign: "right",
-            flexShrink: 0,
-            overflow: "hidden",
-          }}
-        >
+        {/* Spec content — fades out when yaml arrives */}
+        {crossfade < 1 && (
           <div
             style={{
-              paddingTop: 26,
-              transform: `translateY(${-scrollY}px)`,
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              display: "flex",
+              opacity: 1 - crossfade,
             }}
           >
-            {SPEC_LINES.map((_, i) => (
+            <LineNumberGutter lines={SPEC_LINES.length} scrollY={specScrollY} />
+            <div style={{ flex: 1, overflow: "hidden" }}>
               <div
-                key={i}
                 style={{
-                  fontFamily: MONO,
-                  fontSize: 12,
-                  lineHeight: "20px",
-                  color: "#5a5a5a",
-                  userSelect: "none",
+                  paddingTop: 26,
+                  paddingLeft: 12,
+                  paddingRight: 12,
+                  transform: `translateY(${-specScrollY}px)`,
                 }}
               >
-                {i + 1}
+                {SPEC_LINES.map((line, i) => (
+                  <SpecLineRow key={i} line={line} />
+                ))}
               </div>
-            ))}
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Code area */}
-        <div
-          style={{
-            flex: 1,
-            overflow: "hidden",
-          }}
-        >
+        {/* YAML content — fades in */}
+        {crossfade > 0 && (
           <div
             style={{
-              paddingTop: 26,
-              paddingLeft: 12,
-              paddingRight: 12,
-              transform: `translateY(${-scrollY}px)`,
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              display: "flex",
+              opacity: crossfade,
             }}
           >
-            {SPEC_LINES.map((line, i) => (
+            <LineNumberGutter lines={YAML_LINES.length} scrollY={yamlScrollY} />
+            <div style={{ flex: 1, overflow: "hidden" }}>
               <div
-                key={i}
                 style={{
-                  fontFamily: MONO,
-                  fontSize: 12,
-                  lineHeight: "20px",
-                  color: STYLE_COLORS[line.style],
-                  fontWeight: fontWeightFor(line.style),
-                  whiteSpace: "pre",
-                  minHeight: 20,
+                  paddingTop: 26,
+                  paddingLeft: 12,
+                  paddingRight: 12,
+                  transform: `translateY(${-yamlScrollY}px)`,
                 }}
               >
-                {line.style === "list" && line.text.startsWith("- ") ? (
-                  <>
-                    <span style={{ color: "#569cd6" }}>-</span>
-                    {line.text.slice(1)}
-                  </>
-                ) : (
-                  line.text
-                )}
+                {YAML_LINES.map((line, i) => (
+                  <YamlLineRow key={i} line={line} />
+                ))}
               </div>
-            ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Status bar */}
@@ -360,8 +388,7 @@ export const VscodeEditor: React.FC = () => {
             style={{
               color: "#fff",
               fontSize: 11,
-              fontFamily:
-                '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif',
+              fontFamily: STATUS_FONT,
               display: "flex",
               alignItems: "center",
               gap: 4,
@@ -376,70 +403,155 @@ export const VscodeEditor: React.FC = () => {
             </svg>
             main
           </span>
-          <span
-            style={{
-              color: "#fff",
-              fontSize: 11,
-              fontFamily:
-                '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif',
-            }}
-          >
+          <span style={{ color: "#fff", fontSize: 11, fontFamily: STATUS_FONT }}>
             ⨂ 0 ⚠ 0
           </span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <span
-            style={{
-              color: "#fff",
-              fontSize: 11,
-              fontFamily:
-                '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif',
-            }}
-          >
-            Ln 1, Col 1
-          </span>
-          <span
-            style={{
-              color: "#fff",
-              fontSize: 11,
-              fontFamily:
-                '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif',
-            }}
-          >
-            Spaces: 2
-          </span>
-          <span
-            style={{
-              color: "#fff",
-              fontSize: 11,
-              fontFamily:
-                '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif',
-            }}
-          >
-            UTF-8
-          </span>
-          <span
-            style={{
-              color: "#fff",
-              fontSize: 11,
-              fontFamily:
-                '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif',
-            }}
-          >
-            LF
-          </span>
-          <span
-            style={{
-              color: "#fff",
-              fontSize: 11,
-              fontFamily:
-                '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif',
-            }}
-          >
-            {"{"} {"}"} Markdown
-          </span>
+          <StatusBarItem>Ln 1, Col 1</StatusBarItem>
+          <StatusBarItem>Spaces: 2</StatusBarItem>
+          <StatusBarItem>UTF-8</StatusBarItem>
+          <StatusBarItem>LF</StatusBarItem>
+          <StatusBarItem>
+            {"{"} {"}"} {showingYaml ? "YAML" : "Markdown"}
+          </StatusBarItem>
         </div>
       </div>
     </div>
   );
+};
+
+/** Reusable status bar text item */
+const StatusBarItem: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <span
+    style={{
+      color: "#fff",
+      fontSize: 11,
+      fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif',
+    }}
+  >
+    {children}
+  </span>
+);
+
+/** Line number gutter — shared between spec and yaml */
+const LineNumberGutter: React.FC<{ lines: number; scrollY: number }> = ({
+  lines,
+  scrollY,
+}) => (
+  <div
+    style={{
+      width: 44,
+      backgroundColor: "#1e1e1e",
+      paddingRight: 8,
+      textAlign: "right",
+      flexShrink: 0,
+      overflow: "hidden",
+    }}
+  >
+    <div style={{ paddingTop: 26, transform: `translateY(${-scrollY}px)` }}>
+      {Array.from({ length: lines }, (_, i) => (
+        <div
+          key={i}
+          style={{
+            fontFamily: MONO,
+            fontSize: 12,
+            lineHeight: "20px",
+            color: "#5a5a5a",
+            userSelect: "none",
+          }}
+        >
+          {i + 1}
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+/** Renders a single spec line with syntax highlighting */
+const SpecLineRow: React.FC<{ line: { text: string; style: SpecLineStyle } }> = ({
+  line,
+}) => (
+  <div
+    style={{
+      fontFamily: MONO,
+      fontSize: 12,
+      lineHeight: "20px",
+      color: SPEC_COLORS[line.style],
+      fontWeight: specFontWeight(line.style),
+      whiteSpace: "pre",
+      minHeight: 20,
+    }}
+  >
+    {line.style === "list" && line.text.startsWith("- ") ? (
+      <>
+        <span style={{ color: "#569cd6" }}>-</span>
+        {line.text.slice(1)}
+      </>
+    ) : (
+      line.text
+    )}
+  </div>
+);
+
+/** Renders a single YAML line with syntax highlighting */
+const YamlLineRow: React.FC<{ line: { text: string; style: YamlLineStyle } }> = ({
+  line,
+}) => {
+  const baseStyle: React.CSSProperties = {
+    fontFamily: MONO,
+    fontSize: 12,
+    lineHeight: "20px",
+    whiteSpace: "pre",
+    minHeight: 20,
+  };
+
+  if (line.style === "blank") {
+    return <div style={{ ...baseStyle, color: "transparent" }}>{" "}</div>;
+  }
+
+  if (line.style === "comment") {
+    return <div style={{ ...baseStyle, color: YAML_COLORS.comment }}>{line.text}</div>;
+  }
+
+  if (line.style === "key") {
+    return <div style={{ ...baseStyle, color: YAML_COLORS.key }}>{line.text}</div>;
+  }
+
+  if (line.style === "key-value") {
+    const colonIdx = line.text.indexOf(": ");
+    if (colonIdx === -1) {
+      return <div style={{ ...baseStyle, color: YAML_COLORS.key }}>{line.text}</div>;
+    }
+    const key = line.text.slice(0, colonIdx);
+    const value = line.text.slice(colonIdx + 2);
+    // Block scalar indicator | is purple punctuation, not a string value
+    const valueColor = value === "|" ? "#a074c4" : "#ce9178";
+    return (
+      <div style={baseStyle}>
+        <span style={{ color: "#9cdcfe" }}>{key}</span>
+        <span style={{ color: "#d4d4d4" }}>: </span>
+        <span style={{ color: valueColor }}>{value}</span>
+      </div>
+    );
+  }
+
+  if (line.style === "list-item") {
+    const dashIdx = line.text.indexOf("- ");
+    if (dashIdx === -1) {
+      return <div style={{ ...baseStyle, color: YAML_COLORS["list-item"] }}>{line.text}</div>;
+    }
+    const indent = line.text.slice(0, dashIdx);
+    const value = line.text.slice(dashIdx + 2);
+    return (
+      <div style={baseStyle}>
+        <span>{indent}</span>
+        <span style={{ color: "#d4d4d4" }}>- </span>
+        <span style={{ color: "#ce9178" }}>{value}</span>
+      </div>
+    );
+  }
+
+  // prompt-body
+  return <div style={{ ...baseStyle, color: YAML_COLORS["prompt-body"] }}>{line.text}</div>;
 };
