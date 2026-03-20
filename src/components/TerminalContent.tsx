@@ -31,9 +31,10 @@ import {
   THIRD_PROMPT_SUBMIT,
   FLEETGO_BACKGROUND,
 } from "../constants/timing";
-import { GREEN, BLUE, GRAY, DIM, TEXT, TOOL_INDENT } from "../constants/theme";
+import { GREEN, GRAY, DIM, TEXT, TOOL_INDENT } from "../constants/theme";
 import {
   Dot,
+  BlinkingDot,
   SubLine,
   StatusLine,
   FadeIn,
@@ -113,7 +114,7 @@ export const TerminalContent: React.FC = () => {
       {frame >= SCOUTS_START && (
         <div style={{ marginBottom: 4, marginTop: 12 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <Dot color={allScoutsDone ? GREEN : BLUE} />
+            {allScoutsDone ? <Dot color={GREEN} /> : <BlinkingDot color={GREEN} />}
             <span
               style={{
                 color: TEXT,

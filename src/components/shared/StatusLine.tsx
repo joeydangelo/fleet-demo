@@ -53,7 +53,7 @@ export const StatusLine: React.FC<{
       {label}
     </span>
     <span style={{ color: DIM, fontSize: 12 }}>
-      ({seconds} \u00b7 {tokenDirection} {tokens} tokens)
+      ({seconds} {"\u00b7"} {tokenDirection} {tokens} tokens)
     </span>
   </div>
 );
