@@ -6,6 +6,9 @@ import {
   SUBMIT_FRAME,
   ASK_USER_START,
   ASK_USER_END,
+  SECOND_PROMPT_TEXT,
+  SECOND_PROMPT_START,
+  SECOND_PROMPT_SUBMIT,
 } from "../constants/timing";
 import { MONO } from "../constants/theme";
 import { TerminalContent } from "./TerminalContent";
@@ -19,6 +22,8 @@ export const MacTerminal: React.FC = () => {
   const submitted = frame >= SUBMIT_FRAME;
 
   const askActive = frame >= ASK_USER_START && frame < ASK_USER_END;
+  const secondPromptActive =
+    frame >= SECOND_PROMPT_START && frame < SECOND_PROMPT_SUBMIT;
 
   // Smooth fade for input box around AUQ transitions
   const inputBoxOpacity =
@@ -154,6 +159,19 @@ export const MacTerminal: React.FC = () => {
                 }}
               >
                 {PROMPT_TEXT}
+                <InputCursor />
+              </span>
+            ) : secondPromptActive ? (
+              <span
+                style={{
+                  fontFamily: MONO,
+                  fontSize: 13,
+                  color: "#3d3d3d",
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-word",
+                }}
+              >
+                {SECOND_PROMPT_TEXT}
                 <InputCursor />
               </span>
             ) : (

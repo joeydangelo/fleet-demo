@@ -32,4 +32,19 @@ export const TERMINAL_REPOSITION_START = SPEC_WRITE_START + 15;
 // VSCode editor slides in after terminal has moved
 export const SPEC_EDITOR_START = TERMINAL_REPOSITION_START + 20;
 
-export const TIMER_START = SPEC_EDITOR_START + 60;
+// Phase 1 ends: spec summary + first timer
+export const SPEC_SUMMARY_START = SPEC_EDITOR_START + 25;
+export const TIMER1_START = SPEC_SUMMARY_START + 60;
+
+// Phase 2: user approves spec, orchestrator decomposes
+export const SECOND_PROMPT_TEXT = "looks good, carry on";
+export const SECOND_PROMPT_START = TIMER1_START + 25;
+export const SECOND_PROMPT_SUBMIT = SECOND_PROMPT_START + 35;
+
+export const BASH_DECOMPOSE_START = SECOND_PROMPT_SUBMIT + 20;
+export const BASH_TASKSPLIT_START = BASH_DECOMPOSE_START + 25;
+export const BASH_FLEETYAML_START = BASH_TASKSPLIT_START + 25;
+
+export const YAML_WRITE_START = BASH_FLEETYAML_START + 25;
+export const FINAL_SUMMARY_START = YAML_WRITE_START + 15;
+export const TIMER2_START = FINAL_SUMMARY_START + 55;

@@ -1,6 +1,6 @@
 import React from "react";
 import { useCurrentFrame, useVideoConfig, spring, interpolate, Easing } from "remotion";
-import { SPEC_EDITOR_START } from "../constants/timing";
+import { SPEC_EDITOR_START, SECOND_PROMPT_START } from "../constants/timing";
 import { MONO } from "../constants/theme";
 import {
   SPEC_FILENAME,
@@ -71,9 +71,10 @@ export const VscodeEditor: React.FC = () => {
   const translateX = interpolate(entrance, [0, 1], [60, 0]);
   const opacity = entrance;
 
-  // Smooth scroll through spec content after entrance settles
-  const SCROLL_START = 45; // frames after editor appears
-  const SCROLL_DURATION = 120; // frames to scroll
+  // Smooth scroll through spec — finishes just before user types approval
+  const SCROLL_START = 25; // frames after editor appears
+  const SCROLL_END = SECOND_PROMPT_START - SPEC_EDITOR_START - 20;
+  const SCROLL_DURATION = SCROLL_END - SCROLL_START;
   const LINE_HEIGHT = 20;
   const VISIBLE_LINES = 24; // approximate visible lines in editor area
   const totalContentHeight = SPEC_LINES.length * LINE_HEIGHT;

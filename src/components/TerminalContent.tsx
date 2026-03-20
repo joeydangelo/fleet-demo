@@ -16,9 +16,18 @@ import {
   BASH_TEMPLATE_START,
   ASK_USER_END,
   SPEC_WRITE_START,
-  TIMER_START,
+  SPEC_SUMMARY_START,
+  TIMER1_START,
+  SECOND_PROMPT_TEXT,
+  SECOND_PROMPT_SUBMIT,
+  BASH_DECOMPOSE_START,
+  BASH_TASKSPLIT_START,
+  BASH_FLEETYAML_START,
+  YAML_WRITE_START,
+  FINAL_SUMMARY_START,
+  TIMER2_START,
 } from "../constants/timing";
-import { GREEN, BLUE, GRAY, DIM, TEXT, BOLD_TEXT } from "../constants/theme";
+import { GREEN, BLUE, GRAY, DIM, TEXT, BOLD_TEXT, ORANGE } from "../constants/theme";
 import {
   Dot,
   CollapsedOutput,
@@ -48,6 +57,20 @@ export const TerminalContent: React.FC = () => {
     return `${tokens}`;
   }, [frame, fps]);
 
+  const phase2Seconds = useMemo(() => {
+    if (frame < SECOND_PROMPT_SUBMIT) return null;
+    const elapsed = Math.floor((frame - SECOND_PROMPT_SUBMIT) / fps);
+    return `${elapsed}s`;
+  }, [frame, fps]);
+
+  const phase2Tokens = useMemo(() => {
+    if (frame < SECOND_PROMPT_SUBMIT) return null;
+    const elapsed = (frame - SECOND_PROMPT_SUBMIT) / fps;
+    const tokens = Math.floor(elapsed * 480);
+    if (tokens > 1000) return `${(tokens / 1000).toFixed(1)}k`;
+    return `${tokens}`;
+  }, [frame, fps]);
+
   const scrollOffset = useMemo(() => {
     if (frame < ASSESSMENT_START) return 0;
     if (frame < BASH_WRITESPEC_START) {
@@ -58,10 +81,34 @@ export const TerminalContent: React.FC = () => {
         { extrapolateRight: "clamp" },
       );
     }
+    if (frame < SPEC_SUMMARY_START) {
+      return interpolate(
+        frame,
+        [BASH_WRITESPEC_START, BASH_TEMPLATE_START + 20],
+        [100, 260],
+        { extrapolateRight: "clamp" },
+      );
+    }
+    if (frame < SECOND_PROMPT_SUBMIT) {
+      return interpolate(
+        frame,
+        [SPEC_SUMMARY_START, TIMER1_START],
+        [260, 420],
+        { extrapolateRight: "clamp" },
+      );
+    }
+    if (frame < YAML_WRITE_START) {
+      return interpolate(
+        frame,
+        [SECOND_PROMPT_SUBMIT, BASH_FLEETYAML_START],
+        [420, 600],
+        { extrapolateRight: "clamp" },
+      );
+    }
     return interpolate(
       frame,
-      [BASH_WRITESPEC_START, BASH_TEMPLATE_START + 20],
-      [100, 260],
+      [YAML_WRITE_START, TIMER2_START],
+      [600, 720],
       { extrapolateRight: "clamp" },
     );
   }, [frame]);
@@ -316,23 +363,182 @@ export const TerminalContent: React.FC = () => {
         <SubLine>Wrote 198 lines</SubLine>
       </FadeIn>
 
-
-      {/* Timer */}
-      <FadeIn start={TIMER_START} style={{ marginTop: 12 }}>
-        <StatusLine
-          seconds="3m 38s"
-          tokens="231.3k"
-          label="Crunched for 3m 38s"
-        />
+      {/* Spec summary */}
+      <FadeIn
+        start={SPEC_SUMMARY_START}
+        style={{ marginBottom: 4, marginTop: 12 }}
+      >
+        <div
+          style={{
+            paddingLeft: 22,
+            fontSize: 12,
+            color: TEXT,
+            lineHeight: 1.7,
+            maxWidth: 440,
+          }}
+        >
+          <p style={{ margin: "4px 0" }}>
+            Sliding window per-user, per-endpoint across all 14 routes.
+            Single middleware after auth — no per-handler wiring.
+          </p>
+          <p style={{ margin: "4px 0" }}>
+            Redis failure → fail open. 429 + Retry-After when exceeded.
+            X-RateLimit-* headers on every response.
+          </p>
+          <p style={{ margin: "4px 0" }}>
+            Want me to proceed to task decomposition, or adjust the spec?
+          </p>
+        </div>
       </FadeIn>
 
-      {/* Running status */}
+      {/* Timer 1 — static, no animation */}
+      <FadeIn start={TIMER1_START} style={{ marginTop: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ color: ORANGE, fontSize: 14, marginRight: 6 }}>✻</span>
+          <span style={{ color: ORANGE, fontWeight: 600, fontSize: 12 }}>
+            Crunched for 3m 38s
+          </span>
+        </div>
+      </FadeIn>
+
+      {/* Phase 1 running status */}
       {frame >= SKILL_START + 20 &&
-        frame < TIMER_START &&
+        frame < TIMER1_START &&
         runningSeconds &&
         runningTokens && (
           <div style={{ marginTop: 8 }}>
             <StatusLine seconds={runningSeconds} tokens={runningTokens} />
+          </div>
+        )}
+
+      {/* ---- Phase 2: User approves, orchestrator decomposes ---- */}
+
+      {/* Second submitted prompt */}
+      {frame >= SECOND_PROMPT_SUBMIT && (
+        <div style={{ marginBottom: 12, marginTop: 16 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              fontSize: 13,
+              lineHeight: 1.6,
+            }}
+          >
+            <span style={{ color: BLUE, marginRight: 8, fontWeight: 700 }}>
+              ❯
+            </span>
+            <span style={{ color: TEXT, whiteSpace: "pre-wrap" }}>
+              {SECOND_PROMPT_TEXT}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Bash(fleet shortcut decompose-work) */}
+      <FadeIn
+        start={BASH_DECOMPOSE_START}
+        style={{ marginBottom: 4, marginTop: 8 }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <Dot color={GREEN} />
+          <span style={{ fontWeight: 700, color: BOLD_TEXT, fontSize: 13 }}>
+            Bash(decompose-work)
+          </span>
+        </div>
+        {frame >= BASH_DECOMPOSE_START + 10 && (
+          <CollapsedOutput lines={57} />
+        )}
+      </FadeIn>
+
+      {/* Bash(fleet guidelines task-splitting) */}
+      <FadeIn
+        start={BASH_TASKSPLIT_START}
+        style={{ marginBottom: 4, marginTop: 8 }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <Dot color={GREEN} />
+          <span style={{ fontWeight: 700, color: BOLD_TEXT, fontSize: 13 }}>
+            Bash(task-splitting)
+          </span>
+        </div>
+        {frame >= BASH_TASKSPLIT_START + 10 && (
+          <CollapsedOutput lines={38} />
+        )}
+      </FadeIn>
+
+      {/* Bash(fleet template fleet-yaml) */}
+      <FadeIn
+        start={BASH_FLEETYAML_START}
+        style={{ marginBottom: 4, marginTop: 8 }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <Dot color={GREEN} />
+          <span style={{ fontWeight: 700, color: BOLD_TEXT, fontSize: 13 }}>
+            Bash(fleet-yaml)
+          </span>
+        </div>
+        {frame >= BASH_FLEETYAML_START + 10 && (
+          <CollapsedOutput lines={56} />
+        )}
+      </FadeIn>
+
+      {/* Write(.fleet/fleet.yaml) */}
+      <FadeIn
+        start={YAML_WRITE_START}
+        style={{ marginBottom: 4, marginTop: 8 }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <Dot color={GREEN} />
+          <span style={{ fontWeight: 700, color: BOLD_TEXT, fontSize: 13 }}>
+            Write(.fleet/fleet.yaml)
+          </span>
+        </div>
+        <SubLine>Wrote 46 lines</SubLine>
+      </FadeIn>
+
+      {/* Final summary — decompose result + fleet go prompt */}
+      <FadeIn
+        start={FINAL_SUMMARY_START}
+        style={{ marginBottom: 4, marginTop: 12 }}
+      >
+        <div
+          style={{
+            paddingLeft: 22,
+            fontSize: 12,
+            color: TEXT,
+            lineHeight: 1.7,
+            maxWidth: 440,
+          }}
+        >
+          <p style={{ margin: "4px 0" }}>
+            Two parallel tasks — middleware owns the sliding window limiter
+            and Redis layer, config owns route-level limit definitions and
+            response headers.
+          </p>
+          <p style={{ margin: "4px 0" }}>
+            Ready to run fleet go to launch the builders. Want me to kick
+            it off?
+          </p>
+        </div>
+      </FadeIn>
+
+      {/* Timer 2 — static, no animation */}
+      <FadeIn start={TIMER2_START} style={{ marginTop: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ color: ORANGE, fontSize: 14, marginRight: 6 }}>✻</span>
+          <span style={{ color: ORANGE, fontWeight: 600, fontSize: 12 }}>
+            Crunched for 5m 52s
+          </span>
+        </div>
+      </FadeIn>
+
+      {/* Phase 2 running status */}
+      {frame >= SECOND_PROMPT_SUBMIT + 15 &&
+        frame < TIMER2_START &&
+        phase2Seconds &&
+        phase2Tokens && (
+          <div style={{ marginTop: 8 }}>
+            <StatusLine seconds={phase2Seconds} tokens={phase2Tokens} />
           </div>
         )}
     </div>
