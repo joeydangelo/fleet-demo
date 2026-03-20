@@ -26,4 +26,10 @@ export const ASK_USER_START = BASH_TEMPLATE_START + 30;
 export const ASK_USER_END = ASK_USER_START + 200; // ~6.7 seconds (2 questions + submit)
 
 export const SPEC_WRITE_START = ASK_USER_END + 20;
-export const TIMER_START = SPEC_WRITE_START + 30;
+
+// Terminal starts repositioning when Write(...) line appears
+export const TERMINAL_REPOSITION_START = SPEC_WRITE_START + 15;
+// VSCode editor slides in after terminal has moved
+export const SPEC_EDITOR_START = TERMINAL_REPOSITION_START + 20;
+
+export const TIMER_START = SPEC_EDITOR_START + 60;
