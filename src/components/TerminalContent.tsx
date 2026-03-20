@@ -101,14 +101,14 @@ export const TerminalContent: React.FC = () => {
       return interpolate(
         frame,
         [SECOND_PROMPT_SUBMIT, BASH_FLEETYAML_START],
-        [420, 600],
+        [420, 650],
         { extrapolateRight: "clamp" },
       );
     }
     return interpolate(
       frame,
       [YAML_WRITE_START, TIMER2_START],
-      [600, 720],
+      [650, 780],
       { extrapolateRight: "clamp" },
     );
   }, [frame]);
