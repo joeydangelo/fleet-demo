@@ -1,10 +1,12 @@
 import { AbsoluteFill, useCurrentFrame, useVideoConfig, spring, interpolate } from "remotion";
+import { FleetCli } from "./components/FleetCli";
 import { MacTerminal } from "./components/MacTerminal";
 import { VscodeEditor } from "./components/VscodeEditor";
 import {
   TERMINAL_REPOSITION_START,
   SPEC_EDITOR_START,
   EDITOR_EXIT_START,
+  FLEETGO_BACKGROUND,
 } from "./constants/timing";
 import { SPRING_LAYOUT } from "./constants/theme";
 
@@ -45,6 +47,20 @@ export const MyComposition: React.FC = () => {
     extrapolateRight: "clamp",
   });
 
+  // Phase 4: Mac terminal slides in during fleet go background
+  const macTermFrame = frame - FLEETGO_BACKGROUND;
+  const macTermReposition = macTermFrame >= 0
+    ? spring({
+        frame: macTermFrame,
+        fps,
+        config: SPRING_LAYOUT,
+      })
+    : 0;
+
+  // Fleet CLI shifts left again when mac terminal appears
+  const fleetGoShift = interpolate(macTermReposition, [0, 1], [0, -280]);
+  const fleetGoScale = interpolate(macTermReposition, [0, 1], [1, 0.85]);
+
   return (
     <AbsoluteFill
       style={{
@@ -57,14 +73,14 @@ export const MyComposition: React.FC = () => {
         backgroundSize: "24px 24px",
       }}
     >
-      {/* Terminal — animates left for editor, then back to center for fleet go */}
+      {/* Fleet CLI — animates left for editor, recenters, then shifts left again for mac terminal */}
       <div
         style={{
-          transform: `translateX(${terminalX}px) scale(${terminalScale})`,
+          transform: `translateX(${terminalX + fleetGoShift}px) scale(${terminalScale * fleetGoScale})`,
           transformOrigin: "center center",
         }}
       >
-        <MacTerminal />
+        <FleetCli />
       </div>
 
       {/* VSCode editor — slides in from right, slides out when fleet go starts */}
@@ -77,6 +93,18 @@ export const MyComposition: React.FC = () => {
           }}
         >
           <VscodeEditor />
+        </div>
+      )}
+
+      {/* Mac terminal — slides in from right during fleet go background */}
+      {frame >= FLEETGO_BACKGROUND && (
+        <div
+          style={{
+            position: "absolute",
+            right: interpolate(macTermReposition, [0, 1], [-600, 40]),
+          }}
+        >
+          <MacTerminal />
         </div>
       )}
     </AbsoluteFill>
