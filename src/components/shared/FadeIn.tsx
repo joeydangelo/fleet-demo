@@ -1,5 +1,11 @@
 import React from "react";
-import { useCurrentFrame, interpolate } from "remotion";
+import { useCurrentFrame, interpolate, Easing } from "remotion";
+
+const FADE_CLAMP = {
+  extrapolateLeft: "clamp" as const,
+  extrapolateRight: "clamp" as const,
+  easing: Easing.out(Easing.ease),
+};
 
 export const FadeIn: React.FC<{
   start: number;
@@ -11,9 +17,7 @@ export const FadeIn: React.FC<{
   return (
     <div
       style={{
-        opacity: interpolate(frame, [start, start + 8], [0, 1], {
-          extrapolateRight: "clamp",
-        }),
+        opacity: interpolate(frame, [start, start + 8], [0, 1], FADE_CLAMP),
         ...style,
       }}
     >

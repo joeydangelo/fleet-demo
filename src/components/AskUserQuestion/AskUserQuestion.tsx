@@ -1,5 +1,5 @@
 import React from "react";
-import { useCurrentFrame, useVideoConfig, interpolate, spring } from "remotion";
+import { useCurrentFrame, useVideoConfig, interpolate, spring, Easing } from "remotion";
 import { ASK_USER_START, ASK_USER_END } from "../../constants/timing";
 import {
   MONO,
@@ -199,7 +199,7 @@ export const AskUserQuestion: React.FC = () => {
       )}
 
       {phase === 1 && (
-        <div style={{ opacity: interpolate(phaseLocalFrame, [0, 8], [0, 1], { extrapolateRight: "clamp" }) }}>
+        <div style={{ opacity: interpolate(phaseLocalFrame, [0, 8], [0, 1], { extrapolateRight: "clamp", easing: Easing.out(Easing.ease) }) }}>
           <div
             style={{
               fontWeight: 700,
@@ -225,7 +225,7 @@ export const AskUserQuestion: React.FC = () => {
       )}
 
       {phase === 2 && (
-        <div style={{ opacity: interpolate(phaseLocalFrame, [0, 8], [0, 1], { extrapolateRight: "clamp" }) }}>
+        <div style={{ opacity: interpolate(phaseLocalFrame, [0, 8], [0, 1], { extrapolateRight: "clamp", easing: Easing.out(Easing.ease) }) }}>
           <div
             style={{
               fontWeight: 700,

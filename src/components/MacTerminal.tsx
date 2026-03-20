@@ -13,6 +13,7 @@ import {
   THIRD_PROMPT_START,
   THIRD_PROMPT_SUBMIT,
   FLEETGO_BACKGROUND,
+  BG_COMPLETE,
 } from "../constants/timing";
 import { MONO, TEXT, GRAY, SYSTEM_FONT, SPRING_BOUNCE } from "../constants/theme";
 import { TrafficLights } from "./shared";
@@ -190,7 +191,7 @@ export const MacTerminal: React.FC = () => {
         >
           <span style={{ whiteSpace: "pre" }}>
             <span style={{ color: "#FF6D84" }}>⏵⏵ bypass permissions on</span>
-            {frame >= FLEETGO_BACKGROUND && <BashStatusBadge />}
+            {frame >= FLEETGO_BACKGROUND && frame < BG_COMPLETE && <BashStatusBadge />}
           </span>
         </div>
 

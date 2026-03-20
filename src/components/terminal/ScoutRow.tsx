@@ -1,5 +1,5 @@
 import React from "react";
-import { useCurrentFrame } from "remotion";
+import { useCurrentFrame, interpolate, Easing } from "remotion";
 import { DIM, GRAY, TEXT } from "../../constants/theme";
 
 type ScoutData = {
@@ -45,8 +45,13 @@ export const ScoutRow: React.FC<ScoutRowProps> = ({
       style={{
         display: "flex",
         alignItems: "center",
-        opacity: isDone ? 1 : 0.6,
-        transition: "opacity 0.3s",
+        opacity: isDone
+          ? interpolate(frame, [doneFrame, doneFrame + 8], [0.6, 1], {
+              extrapolateLeft: "clamp",
+              extrapolateRight: "clamp",
+              easing: Easing.out(Easing.ease),
+            })
+          : 0.6,
       }}
     >
       <span style={{ color: DIM, marginRight: 4 }}>{connector}</span>

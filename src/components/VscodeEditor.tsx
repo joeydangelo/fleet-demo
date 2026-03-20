@@ -90,7 +90,7 @@ export const VscodeEditor: React.FC = () => {
     frame,
     [yamlSwapStart, yamlSwapStart + CROSSFADE_FRAMES],
     [0, 1],
-    { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
+    { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.inOut(Easing.ease) },
   );
 
   const specScrollStart = 25;

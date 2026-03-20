@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useCurrentFrame, interpolate } from "remotion";
+import { useCurrentFrame, useVideoConfig, interpolate, spring, Easing } from "remotion";
 import {
   ASSESSMENT_START,
   BASH_WRITESPEC_START,
@@ -14,12 +14,19 @@ import {
   BASH_FLEETGO_START,
   BASH_FLEETYAML_START,
   BASH_TEMPLATE_START,
+  FLEETGO_BACKGROUND,
+  FLEETGO_COMPLETE,
+  BASH_GITLOG_START,
+  BASH_TEST_START,
+  FINAL_MESSAGE_START,
 } from "../../constants/timing";
 
-const CLAMP = { extrapolateRight: "clamp" as const };
+const CLAMP_BOTH = {
+  extrapolateLeft: "clamp" as const,
+  extrapolateRight: "clamp" as const,
+};
 
-// Named scroll targets (px) — each represents the resting scroll position
-// after a group of content has appeared
+// Named scroll targets (px)
 const SCROLL_ASSESSMENT = 100;
 const SCROLL_TEMPLATE = 260;
 const SCROLL_ANSWERS = 360;
@@ -29,6 +36,11 @@ const SCROLL_YAML_WRITE = 730;
 const SCROLL_TIMER2 = 860;
 const SCROLL_THIRD_PROMPT = 960;
 const SCROLL_FLEET_GO = 1180;
+const SCROLL_FLEET_GO_BG = 1060;
+const SCROLL_COMPLETE = 1180;
+const SCROLL_GITLOG = 1260;
+const SCROLL_TESTS = 1330;
+const SCROLL_FINAL = 1420;
 
 type ScrollSegment = {
   start: number;
@@ -37,10 +49,10 @@ type ScrollSegment = {
   to: number;
 };
 
+// Pre-background: eased interpolation
 const SCROLL_SEGMENTS: ScrollSegment[] = [
   { start: ASSESSMENT_START, end: ASSESSMENT_START + 30, from: 0, to: SCROLL_ASSESSMENT },
   { start: BASH_WRITESPEC_START, end: BASH_TEMPLATE_START + 20, from: SCROLL_ASSESSMENT, to: SCROLL_TEMPLATE },
-  // Hold at SCROLL_TEMPLATE while AUQ is open (ASK_USER_START..ASK_USER_END)
   { start: ASK_USER_END, end: ASK_USER_END + 25, from: SCROLL_TEMPLATE, to: SCROLL_ANSWERS },
   { start: SPEC_SUMMARY_START, end: SPEC_SUMMARY_START + 30, from: SCROLL_ANSWERS, to: SCROLL_SPEC_SUMMARY },
   { start: TIMER1_START, end: SECOND_PROMPT_SUBMIT, from: SCROLL_SPEC_SUMMARY, to: SCROLL_SECOND_PROMPT },
@@ -50,20 +62,53 @@ const SCROLL_SEGMENTS: ScrollSegment[] = [
   { start: BASH_FLEETGO_START, end: BASH_FLEETGO_START + 55, from: SCROLL_THIRD_PROMPT, to: SCROLL_FLEET_GO },
 ];
 
+// Post-background: spring-driven for natural motion
+// Each entry: [triggerFrame, delay, fromScroll, toScroll]
+const POST_BG_SPRINGS: [number, number, number, number][] = [
+  [FLEETGO_BACKGROUND, 0, SCROLL_FLEET_GO, SCROLL_FLEET_GO_BG],
+  [FLEETGO_COMPLETE, 12, SCROLL_FLEET_GO_BG, SCROLL_COMPLETE],
+  [BASH_GITLOG_START, 10, SCROLL_COMPLETE, SCROLL_GITLOG],
+  [BASH_TEST_START, 10, SCROLL_GITLOG, SCROLL_TESTS],
+  [FINAL_MESSAGE_START, 8, SCROLL_TESTS, SCROLL_FINAL],
+];
+
 export function useTerminalScroll(): number {
   const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+
   return useMemo(() => {
     if (frame < ASSESSMENT_START) return 0;
-
-    // Hold steady while AUQ is open
     if (frame >= ASK_USER_START && frame < ASK_USER_END) return SCROLL_TEMPLATE;
 
-    // Find the last segment whose start we've passed
-    let result = 0;
-    for (const seg of SCROLL_SEGMENTS) {
-      if (frame < seg.start) break;
-      result = interpolate(frame, [seg.start, seg.end], [seg.from, seg.to], CLAMP);
+    // Pre-background: eased interpolation
+    if (frame < FLEETGO_BACKGROUND) {
+      let result = 0;
+      for (const seg of SCROLL_SEGMENTS) {
+        if (frame < seg.start) break;
+        result = interpolate(
+          frame,
+          [seg.start, seg.end],
+          [seg.from, seg.to],
+          { ...CLAMP_BOTH, easing: Easing.inOut(Easing.ease) },
+        );
+      }
+      return result;
+    }
+
+    // Post-background: layer springs additively
+    // Start at SCROLL_FLEET_GO, then each spring moves from its `from` to `to`
+    let result = SCROLL_FLEET_GO;
+    for (const [trigger, delay, from, to] of POST_BG_SPRINGS) {
+      const localFrame = frame - (trigger + delay);
+      if (localFrame < 0) break;
+      const progress = spring({
+        frame: localFrame,
+        fps,
+        config: { damping: 200 },
+      });
+      // Each spring replaces the previous resting position
+      result = from + (to - from) * progress;
     }
     return result;
-  }, [frame]);
+  }, [frame, fps]);
 }

@@ -35,7 +35,7 @@ export const TIMER1_START = SPEC_SUMMARY_START + 40;
 
 // User approves shortly after spec finishes scrolling
 export const SECOND_PROMPT_TEXT = "looks good, carry on";
-export const SECOND_PROMPT_START = TIMER1_START + 45;
+export const SECOND_PROMPT_START = TIMER1_START + 15;
 export const SECOND_PROMPT_SUBMIT = SECOND_PROMPT_START + 35;
 
 export const BASH_DECOMPOSE_START = SECOND_PROMPT_SUBMIT + 20;
@@ -56,4 +56,11 @@ export const EDITOR_EXIT_START = THIRD_PROMPT_START - 15;
 
 export const BASH_FLEETGO_START = THIRD_PROMPT_SUBMIT + 12;
 export const FLEETGO_BACKGROUND = BASH_FLEETGO_START + 95;
-export const TIMER3_START = FLEETGO_BACKGROUND + 25;
+
+// Post-background: builders run, then completion cascade
+export const FLEETGO_COMPLETE = FLEETGO_BACKGROUND + 150;
+export const BASH_GITLOG_START = FLEETGO_COMPLETE + 35;
+export const BASH_TEST_START = BASH_GITLOG_START + 30;
+export const FINAL_MESSAGE_START = BASH_TEST_START + 30;
+export const TIMER3_START = FINAL_MESSAGE_START + 45;
+export const BG_COMPLETE = TIMER3_START + 20;
