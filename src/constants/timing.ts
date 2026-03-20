@@ -27,17 +27,15 @@ export const ASK_USER_END = ASK_USER_START + 200; // ~6.7 seconds (2 questions +
 
 export const SPEC_WRITE_START = ASK_USER_END + 20;
 
-// Phase 1: spec summary + timer, then editor opens so user can read spec
-export const SPEC_SUMMARY_START = SPEC_WRITE_START + 12;
-export const TIMER1_START = SPEC_SUMMARY_START + 40;
-
-// Terminal repositions and VSCode editor slides in right after Write line
+// Editor opens right after Write line; summary + timer appear while spec scrolls
 export const TERMINAL_REPOSITION_START = SPEC_WRITE_START + 8;
 export const SPEC_EDITOR_START = TERMINAL_REPOSITION_START + 15;
+export const SPEC_SUMMARY_START = SPEC_EDITOR_START + 20;
+export const TIMER1_START = SPEC_SUMMARY_START + 40;
 
-// User reads spec in editor, then approves
+// User approves shortly after spec finishes scrolling
 export const SECOND_PROMPT_TEXT = "looks good, carry on";
-export const SECOND_PROMPT_START = SPEC_EDITOR_START + 160;
+export const SECOND_PROMPT_START = TIMER1_START + 45;
 export const SECOND_PROMPT_SUBMIT = SECOND_PROMPT_START + 35;
 
 export const BASH_DECOMPOSE_START = SECOND_PROMPT_SUBMIT + 20;

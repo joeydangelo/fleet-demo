@@ -19,6 +19,51 @@ import { TerminalContent } from "./TerminalContent";
 import { AskUserQuestion } from "./AskUserQuestion";
 import { InputCursor } from "./InputCursor";
 
+const INPUT_TEXT_STYLE: React.CSSProperties = {
+  fontFamily: MONO,
+  fontSize: 13,
+  color: "#3d3d3d",
+  whiteSpace: "pre-wrap",
+  wordBreak: "break-word",
+};
+
+function getInputContent(
+  promptVisible: boolean,
+  submitted: boolean,
+  secondPromptActive: boolean,
+  thirdPromptActive: boolean,
+): React.ReactNode {
+  if (promptVisible && !submitted) {
+    return (
+      <span style={INPUT_TEXT_STYLE}>
+        {PROMPT_TEXT}
+        <InputCursor />
+      </span>
+    );
+  }
+  if (secondPromptActive) {
+    return (
+      <span style={INPUT_TEXT_STYLE}>
+        {SECOND_PROMPT_TEXT}
+        <InputCursor />
+      </span>
+    );
+  }
+  if (thirdPromptActive) {
+    return (
+      <span style={INPUT_TEXT_STYLE}>
+        {THIRD_PROMPT_TEXT}
+        <InputCursor />
+      </span>
+    );
+  }
+  return (
+    <span style={{ fontFamily: MONO, fontSize: 14, color: "#999" }}>
+      {">"} type a message or /help
+    </span>
+  );
+}
+
 export const MacTerminal: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -30,9 +75,6 @@ export const MacTerminal: React.FC = () => {
     frame >= SECOND_PROMPT_START && frame < SECOND_PROMPT_SUBMIT;
   const thirdPromptActive =
     frame >= THIRD_PROMPT_START && frame < THIRD_PROMPT_SUBMIT;
-
-  // Input box stays visible at all times — AUQ overlays on top
-  const inputBoxOpacity = 1;
 
   return (
     <div
@@ -121,7 +163,7 @@ export const MacTerminal: React.FC = () => {
         <TerminalContent />
       </div>
 
-      {/* Bottom area — relative so AUQ can overlay */}
+      {/* Bottom area */}
       <div style={{ position: "relative", flexShrink: 0 }}>
         {/* Input box */}
         <div
@@ -129,7 +171,6 @@ export const MacTerminal: React.FC = () => {
             backgroundColor: "#faf9f7",
             paddingLeft: 20,
             paddingRight: 20,
-            opacity: inputBoxOpacity,
           }}
         >
           <div
@@ -140,60 +181,11 @@ export const MacTerminal: React.FC = () => {
               paddingBottom: 10,
             }}
           >
-            {promptVisible && !submitted ? (
-              <span
-                style={{
-                  fontFamily: MONO,
-                  fontSize: 13,
-                  color: "#3d3d3d",
-                  whiteSpace: "pre-wrap",
-                  wordBreak: "break-word",
-                }}
-              >
-                {PROMPT_TEXT}
-                <InputCursor />
-              </span>
-            ) : secondPromptActive ? (
-              <span
-                style={{
-                  fontFamily: MONO,
-                  fontSize: 13,
-                  color: "#3d3d3d",
-                  whiteSpace: "pre-wrap",
-                  wordBreak: "break-word",
-                }}
-              >
-                {SECOND_PROMPT_TEXT}
-                <InputCursor />
-              </span>
-            ) : thirdPromptActive ? (
-              <span
-                style={{
-                  fontFamily: MONO,
-                  fontSize: 13,
-                  color: "#3d3d3d",
-                  whiteSpace: "pre-wrap",
-                  wordBreak: "break-word",
-                }}
-              >
-                {THIRD_PROMPT_TEXT}
-                <InputCursor />
-              </span>
-            ) : (
-              <span
-                style={{
-                  fontFamily: MONO,
-                  fontSize: 14,
-                  color: "#999",
-                }}
-              >
-                {">"} type a message or /help
-              </span>
-            )}
+            {getInputContent(promptVisible, submitted, secondPromptActive, thirdPromptActive)}
           </div>
         </div>
 
-        {/* Status bar — bypass permissions always visible, bash info appears after ctrl+b */}
+        {/* Status bar */}
         <div
           style={{
             backgroundColor: "#faf9f7",
@@ -233,7 +225,7 @@ export const MacTerminal: React.FC = () => {
           </span>
         </div>
 
-        {/* AUQ overlays input box + bypass permissions when active */}
+        {/* AUQ overlay */}
         {frame >= ASK_USER_START && frame < ASK_USER_END + 15 && (
           <div
             style={{

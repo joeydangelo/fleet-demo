@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { useCurrentFrame, useVideoConfig, interpolate } from "remotion";
+import { useCurrentFrame, interpolate } from "remotion";
 import {
   PROMPT_TEXT,
   SUBMIT_FRAME,
@@ -33,160 +33,43 @@ import {
   FLEETGO_BACKGROUND,
 } from "../constants/timing";
 import { GREEN, BLUE, GRAY, DIM, TEXT, BOLD_TEXT, ORANGE } from "../constants/theme";
-import {
-  Dot,
-  CollapsedOutput,
-  SubLine,
-  StatusLine,
-  FadeIn,
-  ScoutRow,
-} from "./shared";
+import { Dot, SubLine, StatusLine, ScoutRow } from "./shared";
+import { FadeIn } from "./shared/FadeIn";
+import { ToolStep, PromptLine, useElapsedSeconds, useTokenCounter } from "./terminal";
+import { useTerminalScroll } from "./terminal/useTerminalScroll";
 
 export const TerminalContent: React.FC = () => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
 
   const submitted = frame >= SUBMIT_FRAME;
 
-  const runningSeconds = useMemo(() => {
-    if (frame < SKILL_START) return null;
-    const elapsed = Math.floor((frame - SKILL_START) / fps);
-    return `${elapsed}s`;
-  }, [frame, fps]);
+  const runningSeconds = useElapsedSeconds(SKILL_START);
 
-  const runningTokens = useMemo(() => {
-    if (frame < SKILL_START) return null;
-    const FAST_RATE = 420;
-    const SLOW_RATE = 40;
-    let tokens: number;
-    if (frame < ASK_USER_START) {
-      tokens = Math.floor(((frame - SKILL_START) / fps) * FAST_RATE);
-    } else if (frame < ASK_USER_END) {
-      const beforeAuq = ((ASK_USER_START - SKILL_START) / fps) * FAST_RATE;
-      const duringAuq = ((frame - ASK_USER_START) / fps) * SLOW_RATE;
-      tokens = Math.floor(beforeAuq + duringAuq);
-    } else {
-      const beforeAuq = ((ASK_USER_START - SKILL_START) / fps) * FAST_RATE;
-      const duringAuq = ((ASK_USER_END - ASK_USER_START) / fps) * SLOW_RATE;
-      const afterAuq = ((frame - ASK_USER_END) / fps) * FAST_RATE;
-      tokens = Math.floor(beforeAuq + duringAuq + afterAuq);
-    }
-    if (tokens > 1000) return `${(tokens / 1000).toFixed(1)}k`;
-    return `${tokens}`;
-  }, [frame, fps]);
+  const phase1Segments = useMemo(() => [
+    { startFrame: SKILL_START, endFrame: ASK_USER_START, rate: 420 },
+    { startFrame: ASK_USER_START, endFrame: ASK_USER_END, rate: 40 },
+    { startFrame: ASK_USER_END, endFrame: Infinity, rate: 420 },
+  ], []);
+  const runningTokens = useTokenCounter(SKILL_START, phase1Segments);
 
-  const phase2Seconds = useMemo(() => {
-    if (frame < SECOND_PROMPT_SUBMIT) return null;
-    const elapsed = Math.floor((frame - SECOND_PROMPT_SUBMIT) / fps);
-    return `${elapsed}s`;
-  }, [frame, fps]);
+  const phase2Seconds = useElapsedSeconds(SECOND_PROMPT_SUBMIT);
 
-  const phase2Tokens = useMemo(() => {
-    if (frame < SECOND_PROMPT_SUBMIT) return null;
-    const elapsed = (frame - SECOND_PROMPT_SUBMIT) / fps;
-    const tokens = Math.floor(elapsed * 480);
-    if (tokens > 1000) return `${(tokens / 1000).toFixed(1)}k`;
-    return `${tokens}`;
-  }, [frame, fps]);
+  const phase2Segments = useMemo(() => [
+    { startFrame: SECOND_PROMPT_SUBMIT, endFrame: Infinity, rate: 480 },
+  ], []);
+  const phase2Tokens = useTokenCounter(SECOND_PROMPT_SUBMIT, phase2Segments);
 
-  const phase3Seconds = useMemo(() => {
-    if (frame < THIRD_PROMPT_SUBMIT) return null;
-    const elapsed = Math.floor((frame - THIRD_PROMPT_SUBMIT) / fps);
-    return `${elapsed}s`;
-  }, [frame, fps]);
+  const phase3Seconds = useElapsedSeconds(THIRD_PROMPT_SUBMIT);
 
-  const phase3Tokens = useMemo(() => {
-    if (frame < THIRD_PROMPT_SUBMIT) return null;
-    const elapsed = (frame - THIRD_PROMPT_SUBMIT) / fps;
-    const tokens = 105 + Math.floor(elapsed * 3);
-    if (tokens > 1000) return `${(tokens / 1000).toFixed(1)}k`;
-    return `${tokens}`;
-  }, [frame, fps]);
+  const phase3Segments = useMemo(() => [
+    { startFrame: THIRD_PROMPT_SUBMIT, endFrame: Infinity, rate: 3 },
+  ], []);
+  const phase3Tokens = useTokenCounter(THIRD_PROMPT_SUBMIT, phase3Segments, 105);
 
-  const scrollOffset = useMemo(() => {
-    if (frame < ASSESSMENT_START) return 0;
-    if (frame < BASH_WRITESPEC_START) {
-      return interpolate(
-        frame,
-        [ASSESSMENT_START, ASSESSMENT_START + 30],
-        [0, 100],
-        { extrapolateRight: "clamp" },
-      );
-    }
-    if (frame < ASK_USER_START) {
-      return interpolate(
-        frame,
-        [BASH_WRITESPEC_START, BASH_TEMPLATE_START + 20],
-        [100, 260],
-        { extrapolateRight: "clamp" },
-      );
-    }
-    // Hold scroll steady while AUQ is open
-    if (frame < ASK_USER_END) {
-      return 260;
-    }
-    // After AUQ closes, scroll to reveal user answers + Write spec + status
-    if (frame < SPEC_SUMMARY_START) {
-      return interpolate(
-        frame,
-        [ASK_USER_END, ASK_USER_END + 25],
-        [260, 360],
-        { extrapolateRight: "clamp" },
-      );
-    }
-    // Spec summary + timer appear, keep scrolling to keep status visible
-    if (frame < TIMER1_START) {
-      return interpolate(
-        frame,
-        [SPEC_SUMMARY_START, SPEC_SUMMARY_START + 30],
-        [360, 440],
-        { extrapolateRight: "clamp" },
-      );
-    }
-    // Timer shown, user types second prompt
-    if (frame < SECOND_PROMPT_SUBMIT) {
-      return interpolate(
-        frame,
-        [TIMER1_START, SECOND_PROMPT_SUBMIT],
-        [440, 500],
-        { extrapolateRight: "clamp" },
-      );
-    }
-    if (frame < YAML_WRITE_START) {
-      return interpolate(
-        frame,
-        [SECOND_PROMPT_SUBMIT, BASH_FLEETYAML_START],
-        [500, 730],
-        { extrapolateRight: "clamp" },
-      );
-    }
-    if (frame < THIRD_PROMPT_SUBMIT) {
-      return interpolate(
-        frame,
-        [YAML_WRITE_START, TIMER2_START],
-        [730, 860],
-        { extrapolateRight: "clamp" },
-      );
-    }
-    if (frame < BASH_FLEETGO_START) {
-      return interpolate(
-        frame,
-        [THIRD_PROMPT_SUBMIT, BASH_FLEETGO_START],
-        [860, 960],
-        { extrapolateRight: "clamp" },
-      );
-    }
-    return interpolate(
-      frame,
-      [BASH_FLEETGO_START, BASH_FLEETGO_START + 55],
-      [960, 1180],
-      { extrapolateRight: "clamp" },
-    );
-  }, [frame]);
+  const scrollOffset = useTerminalScroll();
 
   if (!submitted) return null;
 
-  // How many scouts are done
   const scoutsDoneCount =
     (frame >= SCOUT1_DONE ? 1 : 0) +
     (frame >= SCOUT2_DONE ? 1 : 0) +
@@ -195,26 +78,9 @@ export const TerminalContent: React.FC = () => {
 
   return (
     <div style={{ transform: `translateY(-${scrollOffset}px)` }}>
-      {/* Submitted prompt */}
-      <div style={{ marginBottom: 12 }}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "flex-start",
-            fontSize: 13,
-            lineHeight: 1.6,
-          }}
-        >
-          <span style={{ color: BLUE, marginRight: 8, fontWeight: 700 }}>
-            ❯
-          </span>
-          <span style={{ color: TEXT, whiteSpace: "pre-wrap" }}>
-            {PROMPT_TEXT}
-          </span>
-        </div>
-      </div>
+      {/* Phase 1: Assess + spec */}
+      <PromptLine text={PROMPT_TEXT} />
 
-      {/* Skill(orchestrator) */}
       <FadeIn start={SKILL_START} style={{ marginBottom: 4 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <Dot color={GREEN} />
@@ -227,37 +93,9 @@ export const TerminalContent: React.FC = () => {
         )}
       </FadeIn>
 
-      {/* Bash(fleet shortcut assess-work) */}
-      <FadeIn
-        start={BASH_ASSESS_START}
-        style={{ marginBottom: 4, marginTop: 8 }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <Dot color={GREEN} />
-          <span style={{ fontWeight: 700, color: BOLD_TEXT, fontSize: 13 }}>
-            Bash(assess-work)
-          </span>
-        </div>
-        {frame >= BASH_ASSESS_START + 10 && <CollapsedOutput lines={67} />}
-      </FadeIn>
+      <ToolStep label="Bash(assess-work)" start={BASH_ASSESS_START} collapsedLines={67} />
+      <ToolStep label="Bash(codebase-research)" start={BASH_GUIDELINES_START} collapsedLines={30} />
 
-      {/* Bash(fleet guidelines codebase-research) */}
-      <FadeIn
-        start={BASH_GUIDELINES_START}
-        style={{ marginBottom: 4, marginTop: 8 }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <Dot color={GREEN} />
-          <span style={{ fontWeight: 700, color: BOLD_TEXT, fontSize: 13 }}>
-            Bash(codebase-research)
-          </span>
-        </div>
-        {frame >= BASH_GUIDELINES_START + 10 && (
-          <CollapsedOutput lines={30} />
-        )}
-      </FadeIn>
-
-      {/* Explore agents — staggered completion */}
       {frame >= SCOUTS_START && (
         <div style={{ marginBottom: 4, marginTop: 12 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -278,7 +116,6 @@ export const TerminalContent: React.FC = () => {
             </span>
           </div>
 
-          {/* Individual agent rows */}
           <div
             style={{
               paddingLeft: 22,
@@ -315,7 +152,6 @@ export const TerminalContent: React.FC = () => {
         </div>
       )}
 
-      {/* Assessment */}
       <FadeIn
         start={ASSESSMENT_START}
         style={{ marginBottom: 4, marginTop: 12 }}
@@ -345,55 +181,10 @@ export const TerminalContent: React.FC = () => {
         )}
       </FadeIn>
 
-      {/* Bash(fleet shortcut write-spec) */}
-      <FadeIn
-        start={BASH_WRITESPEC_START}
-        style={{ marginBottom: 4, marginTop: 8 }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <Dot color={GREEN} />
-          <span style={{ fontWeight: 700, color: BOLD_TEXT, fontSize: 13 }}>
-            Bash(write-spec)
-          </span>
-        </div>
-        {frame >= BASH_WRITESPEC_START + 10 && (
-          <CollapsedOutput lines={67} />
-        )}
-      </FadeIn>
+      <ToolStep label="Bash(write-spec)" start={BASH_WRITESPEC_START} collapsedLines={67} />
+      <ToolStep label="Bash(spec-design)" start={BASH_SPECDESIGN_START} collapsedLines={44} />
+      <ToolStep label="Bash(template plan-spec)" start={BASH_TEMPLATE_START} collapsedLines={37} />
 
-      {/* Bash(fleet guidelines spec-design) */}
-      <FadeIn
-        start={BASH_SPECDESIGN_START}
-        style={{ marginBottom: 4, marginTop: 8 }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <Dot color={GREEN} />
-          <span style={{ fontWeight: 700, color: BOLD_TEXT, fontSize: 13 }}>
-            Bash(spec-design)
-          </span>
-        </div>
-        {frame >= BASH_SPECDESIGN_START + 10 && (
-          <CollapsedOutput lines={44} />
-        )}
-      </FadeIn>
-
-      {/* Bash(fleet template plan-spec) */}
-      <FadeIn
-        start={BASH_TEMPLATE_START}
-        style={{ marginBottom: 4, marginTop: 8 }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <Dot color={GREEN} />
-          <span style={{ fontWeight: 700, color: BOLD_TEXT, fontSize: 13 }}>
-            Bash(template plan-spec)
-          </span>
-        </div>
-        {frame >= BASH_TEMPLATE_START + 10 && (
-          <CollapsedOutput lines={37} />
-        )}
-      </FadeIn>
-
-      {/* User answered Claude's questions */}
       <FadeIn start={ASK_USER_END} style={{ marginBottom: 4, marginTop: 12 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <Dot color={GREEN} />
@@ -420,7 +211,6 @@ export const TerminalContent: React.FC = () => {
         </div>
       </FadeIn>
 
-      {/* Write spec */}
       <FadeIn
         start={SPEC_WRITE_START}
         style={{ marginBottom: 4, marginTop: 8 }}
@@ -434,7 +224,6 @@ export const TerminalContent: React.FC = () => {
         <SubLine>Wrote 198 lines</SubLine>
       </FadeIn>
 
-      {/* Spec summary */}
       <FadeIn
         start={SPEC_SUMMARY_START}
         style={{ marginBottom: 4, marginTop: 12 }}
@@ -462,7 +251,6 @@ export const TerminalContent: React.FC = () => {
         </div>
       </FadeIn>
 
-      {/* Timer 1 — static, no animation */}
       <FadeIn start={TIMER1_START} style={{ marginTop: 12 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <span style={{ color: ORANGE, fontSize: 14, marginRight: 6 }}>✻</span>
@@ -472,7 +260,6 @@ export const TerminalContent: React.FC = () => {
         </div>
       </FadeIn>
 
-      {/* Phase 1 running status */}
       {frame >= SKILL_START + 20 &&
         frame < TIMER1_START &&
         runningSeconds &&
@@ -482,78 +269,17 @@ export const TerminalContent: React.FC = () => {
           </div>
         )}
 
-      {/* ---- Phase 2: User approves, orchestrator decomposes ---- */}
-
-      {/* Second submitted prompt */}
+      {/* Phase 2: Decompose */}
       {frame >= SECOND_PROMPT_SUBMIT && (
-        <div style={{ marginBottom: 12, marginTop: 16 }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "flex-start",
-              fontSize: 13,
-              lineHeight: 1.6,
-            }}
-          >
-            <span style={{ color: BLUE, marginRight: 8, fontWeight: 700 }}>
-              ❯
-            </span>
-            <span style={{ color: TEXT, whiteSpace: "pre-wrap" }}>
-              {SECOND_PROMPT_TEXT}
-            </span>
-          </div>
+        <div style={{ marginTop: 16 }}>
+          <PromptLine text={SECOND_PROMPT_TEXT} />
         </div>
       )}
 
-      {/* Bash(fleet shortcut decompose-work) */}
-      <FadeIn
-        start={BASH_DECOMPOSE_START}
-        style={{ marginBottom: 4, marginTop: 8 }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <Dot color={GREEN} />
-          <span style={{ fontWeight: 700, color: BOLD_TEXT, fontSize: 13 }}>
-            Bash(decompose-work)
-          </span>
-        </div>
-        {frame >= BASH_DECOMPOSE_START + 10 && (
-          <CollapsedOutput lines={57} />
-        )}
-      </FadeIn>
+      <ToolStep label="Bash(decompose-work)" start={BASH_DECOMPOSE_START} collapsedLines={57} />
+      <ToolStep label="Bash(task-splitting)" start={BASH_TASKSPLIT_START} collapsedLines={38} />
+      <ToolStep label="Bash(fleet-yaml)" start={BASH_FLEETYAML_START} collapsedLines={56} />
 
-      {/* Bash(fleet guidelines task-splitting) */}
-      <FadeIn
-        start={BASH_TASKSPLIT_START}
-        style={{ marginBottom: 4, marginTop: 8 }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <Dot color={GREEN} />
-          <span style={{ fontWeight: 700, color: BOLD_TEXT, fontSize: 13 }}>
-            Bash(task-splitting)
-          </span>
-        </div>
-        {frame >= BASH_TASKSPLIT_START + 10 && (
-          <CollapsedOutput lines={38} />
-        )}
-      </FadeIn>
-
-      {/* Bash(fleet template fleet-yaml) */}
-      <FadeIn
-        start={BASH_FLEETYAML_START}
-        style={{ marginBottom: 4, marginTop: 8 }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <Dot color={GREEN} />
-          <span style={{ fontWeight: 700, color: BOLD_TEXT, fontSize: 13 }}>
-            Bash(fleet-yaml)
-          </span>
-        </div>
-        {frame >= BASH_FLEETYAML_START + 10 && (
-          <CollapsedOutput lines={56} />
-        )}
-      </FadeIn>
-
-      {/* Write(.fleet/fleet.yaml) */}
       <FadeIn
         start={YAML_WRITE_START}
         style={{ marginBottom: 4, marginTop: 8 }}
@@ -567,7 +293,6 @@ export const TerminalContent: React.FC = () => {
         <SubLine>Wrote 46 lines</SubLine>
       </FadeIn>
 
-      {/* Final summary — decompose result + fleet go prompt */}
       <FadeIn
         start={FINAL_SUMMARY_START}
         style={{ marginBottom: 4, marginTop: 12 }}
@@ -593,7 +318,6 @@ export const TerminalContent: React.FC = () => {
         </div>
       </FadeIn>
 
-      {/* Timer 2 — static, no animation */}
       <FadeIn start={TIMER2_START} style={{ marginTop: 12 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <span style={{ color: ORANGE, fontSize: 14, marginRight: 6 }}>✻</span>
@@ -603,7 +327,6 @@ export const TerminalContent: React.FC = () => {
         </div>
       </FadeIn>
 
-      {/* Phase 2 running status */}
       {frame >= SECOND_PROMPT_SUBMIT + 15 &&
         frame < TIMER2_START &&
         phase2Seconds &&
@@ -613,30 +336,13 @@ export const TerminalContent: React.FC = () => {
           </div>
         )}
 
-      {/* ---- Phase 3: User kicks off fleet go ---- */}
-
-      {/* Third submitted prompt */}
+      {/* Phase 3: Fleet go */}
       {frame >= THIRD_PROMPT_SUBMIT && (
-        <div style={{ marginBottom: 12, marginTop: 16 }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "flex-start",
-              fontSize: 13,
-              lineHeight: 1.6,
-            }}
-          >
-            <span style={{ color: BLUE, marginRight: 8, fontWeight: 700 }}>
-              ❯
-            </span>
-            <span style={{ color: TEXT, whiteSpace: "pre-wrap" }}>
-              {THIRD_PROMPT_TEXT}
-            </span>
-          </div>
+        <div style={{ marginTop: 16 }}>
+          <PromptLine text={THIRD_PROMPT_TEXT} />
         </div>
       )}
 
-      {/* Bash(fleet go) — persistent header, content transitions below */}
       <FadeIn
         start={BASH_FLEETGO_START}
         style={{ marginBottom: 4, marginTop: 8 }}
@@ -648,7 +354,6 @@ export const TerminalContent: React.FC = () => {
           </span>
         </div>
 
-        {/* Clack output — fades out then unmounts at ctrl+b */}
         {frame < FLEETGO_BACKGROUND && (
           <div
             style={{
@@ -704,7 +409,6 @@ export const TerminalContent: React.FC = () => {
           </div>
         )}
 
-        {/* Background state — fades in after ctrl+b */}
         {frame >= FLEETGO_BACKGROUND && (
           <div
             style={{
@@ -721,7 +425,6 @@ export const TerminalContent: React.FC = () => {
         )}
       </FadeIn>
 
-      {/* Phase 3 running status — stays as scurrying, low token rate while bg */}
       {frame >= FLEETGO_BACKGROUND + 10 &&
         phase3Seconds &&
         phase3Tokens && (

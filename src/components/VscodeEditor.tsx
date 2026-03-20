@@ -17,80 +17,26 @@ import {
   YAML_LINES,
   type YamlLineStyle,
 } from "../constants/yamlContent";
-
-/** Color mapping for spec line styles — dark VSCode-like theme */
-const SPEC_COLORS: Record<SpecLineStyle, string> = {
-  frontmatter: "#ce9178",
-  h1: "#569cd6",
-  h2: "#569cd6",
-  body: "#d4d4d4",
-  blank: "transparent",
-  list: "#d4d4d4",
-  codeblock: "#808080",
-  "code-key": "#9cdcfe",
-  "code-value": "#ce9178",
-};
-
-/** Color mapping for YAML line styles */
-const YAML_COLORS: Record<YamlLineStyle, string> = {
-  comment: "#6a9955",
-  key: "#9cdcfe",
-  "key-value": "#9cdcfe",
-  "list-item": "#ce9178",
-  "prompt-body": "#ce9178",
-  blank: "transparent",
-};
-
-function specFontWeight(style: SpecLineStyle): number {
-  if (style === "h1") return 700;
-  if (style === "h2") return 600;
-  return 400;
-}
-
-/** Markdown file icon — filled blue downward arrow with stem */
-const MarkdownIcon: React.FC = () => (
-  <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-    <path d="M6 2h4v6h3l-5 6-5-6h3V2z" fill="#519aba" />
-  </svg>
-);
-
-/** YAML file icon — purple exclamation mark */
-const YamlIcon: React.FC = () => (
-  <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-    <rect x="7" y="2" width="2" height="8" rx="1" fill="#a074c4" />
-    <rect x="7" y="12" width="2" height="2" rx="1" fill="#a074c4" />
-  </svg>
-);
-
-/** Small icon for the title bar — grid/layout buttons */
-const TitleBarIcon: React.FC<{ d: string }> = ({ d }) => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-    <path d={d} stroke="#808080" strokeWidth="1" fill="none" />
-  </svg>
-);
-
-/** Small icon for the tab bar — split/list buttons */
-const TabBarIcon: React.FC<{ d: string }> = ({ d }) => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-    <path d={d} stroke="#888" strokeWidth="1" fill="none" />
-  </svg>
-);
-
-/** Breadcrumb `>` separator */
-const BreadcrumbChevron: React.FC = () => (
-  <span style={{ color: "#666", fontSize: 10, margin: "0 1px" }}>›</span>
-);
-
-const SYSTEM_FONT =
-  '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif';
-const STATUS_FONT =
-  '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
+import {
+  MarkdownIcon,
+  YamlIcon,
+  TitleBarIcon,
+  TabBarIcon,
+  BreadcrumbChevron,
+  GitBranchIcon,
+} from "./vscode/icons";
+import {
+  SPEC_COLORS,
+  YAML_COLORS,
+  specFontWeight,
+  SYSTEM_FONT,
+  STATUS_FONT,
+} from "./vscode/colors";
 
 const LINE_HEIGHT = 20;
 const VISIBLE_LINES = 24;
-
-/** Duration of the crossfade between spec and yaml content */
 const CROSSFADE_FRAMES = 12;
+const YAML_SWAP_DELAY = 15;
 
 export const VscodeEditor: React.FC = () => {
   const frame = useCurrentFrame();
@@ -99,7 +45,6 @@ export const VscodeEditor: React.FC = () => {
   const localFrame = frame - SPEC_EDITOR_START;
   if (localFrame < 0) return null;
 
-  // Spring entrance — slide in from right + fade
   const entrance = spring({
     frame: localFrame,
     fps,
@@ -109,13 +54,9 @@ export const VscodeEditor: React.FC = () => {
   const translateX = interpolate(entrance, [0, 1], [60, 0]);
   const opacity = entrance;
 
-  // --- Which file is active? ---
-  // Small delay so the CLI "Write" line registers before the editor swaps
-  const YAML_SWAP_DELAY = 15;
   const yamlSwapStart = YAML_WRITE_START + YAML_SWAP_DELAY;
   const showingYaml = frame >= yamlSwapStart;
 
-  // Crossfade progress: 0 = spec, 1 = yaml
   const crossfade = interpolate(
     frame,
     [yamlSwapStart, yamlSwapStart + CROSSFADE_FRAMES],
@@ -123,12 +64,11 @@ export const VscodeEditor: React.FC = () => {
     { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
   );
 
-  // --- Spec scroll ---
+  // Spec scroll
   const specScrollStart = 25;
   const specScrollEnd = SECOND_PROMPT_START - SPEC_EDITOR_START - 20;
   const specScrollDuration = Math.max(30, specScrollEnd - specScrollStart);
-  const specContentHeight = SPEC_LINES.length * LINE_HEIGHT;
-  const specMaxScroll = Math.max(0, specContentHeight - VISIBLE_LINES * LINE_HEIGHT);
+  const specMaxScroll = Math.max(0, SPEC_LINES.length * LINE_HEIGHT - VISIBLE_LINES * LINE_HEIGHT);
   const specScrollY = interpolate(
     localFrame,
     [specScrollStart, specScrollStart + specScrollDuration],
@@ -136,13 +76,12 @@ export const VscodeEditor: React.FC = () => {
     { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.inOut(Easing.ease) },
   );
 
-  // --- YAML scroll ---
+  // YAML scroll
   const yamlLocalFrame = frame - yamlSwapStart;
   const yamlScrollStart = CROSSFADE_FRAMES + 10;
   const yamlScrollEnd = TIMER2_START - yamlSwapStart - 10;
   const yamlScrollDuration = yamlScrollEnd - yamlScrollStart;
-  const yamlContentHeight = YAML_LINES.length * LINE_HEIGHT;
-  const yamlMaxScroll = Math.max(0, yamlContentHeight - VISIBLE_LINES * LINE_HEIGHT);
+  const yamlMaxScroll = Math.max(0, YAML_LINES.length * LINE_HEIGHT - VISIBLE_LINES * LINE_HEIGHT);
   const yamlScrollY = interpolate(
     yamlLocalFrame,
     [yamlScrollStart, yamlScrollStart + yamlScrollDuration],
@@ -179,14 +118,12 @@ export const VscodeEditor: React.FC = () => {
           flexShrink: 0,
         }}
       >
-        {/* Traffic lights */}
         <div style={{ display: "flex", gap: 8 }}>
           <div style={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: "#ff5f57" }} />
           <div style={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: "#febc2e" }} />
           <div style={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: "#28c840" }} />
         </div>
 
-        {/* Centered title */}
         <div
           style={{
             flex: 1,
@@ -200,7 +137,6 @@ export const VscodeEditor: React.FC = () => {
           {activeFilename}
         </div>
 
-        {/* Right icons */}
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <TitleBarIcon d="M3 3h4v4H3zM9 3h4v4H9zM3 9h4v4H3zM9 9h4v4H9z" />
           <TitleBarIcon d="M3 3h4v10H3zM9 3h4v10H9z" />
@@ -219,7 +155,6 @@ export const VscodeEditor: React.FC = () => {
           flexShrink: 0,
         }}
       >
-        {/* Active tab */}
         <div
           style={{
             display: "flex",
@@ -254,7 +189,7 @@ export const VscodeEditor: React.FC = () => {
         </div>
       </div>
 
-      {/* Editor content — crossfade between spec and yaml */}
+      {/* Editor content */}
       <div
         style={{
           flex: 1,
@@ -282,32 +217,22 @@ export const VscodeEditor: React.FC = () => {
             backgroundColor: "#1e1e1e",
           }}
         >
-          {showingYaml ? (
+          <span style={{ color: "#aaa" }}>fleet</span>
+          <BreadcrumbChevron />
+          <span style={{ color: "#aaa" }}>.fleet</span>
+          <BreadcrumbChevron />
+          {!showingYaml && (
             <>
-              <span style={{ color: "#aaa" }}>fleet</span>
-              <BreadcrumbChevron />
-              <span style={{ color: "#aaa" }}>.fleet</span>
-              <BreadcrumbChevron />
-              <span style={{ color: "#ccc" }}>{YAML_FILENAME}</span>
-              <BreadcrumbChevron />
-              <span style={{ color: "#888" }}>…</span>
-            </>
-          ) : (
-            <>
-              <span style={{ color: "#aaa" }}>fleet</span>
-              <BreadcrumbChevron />
-              <span style={{ color: "#aaa" }}>.fleet</span>
-              <BreadcrumbChevron />
               <span style={{ color: "#aaa" }}>specs</span>
               <BreadcrumbChevron />
-              <span style={{ color: "#ccc" }}>{SPEC_FILENAME}</span>
-              <BreadcrumbChevron />
-              <span style={{ color: "#888" }}>…</span>
             </>
           )}
+          <span style={{ color: "#ccc" }}>{activeFilename}</span>
+          <BreadcrumbChevron />
+          <span style={{ color: "#888" }}>…</span>
         </div>
 
-        {/* Spec content — fades out when yaml arrives */}
+        {/* Spec content */}
         {crossfade < 1 && (
           <div
             style={{
@@ -338,7 +263,7 @@ export const VscodeEditor: React.FC = () => {
           </div>
         )}
 
-        {/* YAML content — fades in */}
+        {/* YAML content */}
         {crossfade > 0 && (
           <div
             style={{
@@ -394,13 +319,7 @@ export const VscodeEditor: React.FC = () => {
               gap: 4,
             }}
           >
-            <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-              <circle cx="6" cy="4" r="2" stroke="#fff" strokeWidth="1.5" fill="none" />
-              <circle cx="6" cy="12" r="2" stroke="#fff" strokeWidth="1.5" fill="none" />
-              <line x1="6" y1="6" x2="6" y2="10" stroke="#fff" strokeWidth="1.5" />
-              <path d="M8 12h2c1 0 2-1 2-2V6" stroke="#fff" strokeWidth="1.5" fill="none" />
-              <circle cx="12" cy="4" r="2" stroke="#fff" strokeWidth="1.5" fill="none" />
-            </svg>
+            <GitBranchIcon />
             main
           </span>
           <span style={{ color: "#fff", fontSize: 11, fontFamily: STATUS_FONT }}>
@@ -421,20 +340,18 @@ export const VscodeEditor: React.FC = () => {
   );
 };
 
-/** Reusable status bar text item */
 const StatusBarItem: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <span
     style={{
       color: "#fff",
       fontSize: 11,
-      fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif',
+      fontFamily: STATUS_FONT,
     }}
   >
     {children}
   </span>
 );
 
-/** Line number gutter — shared between spec and yaml */
 const LineNumberGutter: React.FC<{ lines: number; scrollY: number }> = ({
   lines,
   scrollY,
@@ -468,7 +385,6 @@ const LineNumberGutter: React.FC<{ lines: number; scrollY: number }> = ({
   </div>
 );
 
-/** Renders a single spec line with syntax highlighting */
 const SpecLineRow: React.FC<{ line: { text: string; style: SpecLineStyle } }> = ({
   line,
 }) => (
@@ -494,7 +410,6 @@ const SpecLineRow: React.FC<{ line: { text: string; style: SpecLineStyle } }> = 
   </div>
 );
 
-/** Renders a single YAML line with syntax highlighting */
 const YamlLineRow: React.FC<{ line: { text: string; style: YamlLineStyle } }> = ({
   line,
 }) => {
@@ -525,7 +440,6 @@ const YamlLineRow: React.FC<{ line: { text: string; style: YamlLineStyle } }> = 
     }
     const key = line.text.slice(0, colonIdx);
     const value = line.text.slice(colonIdx + 2);
-    // Block scalar indicator | is purple punctuation, not a string value
     const valueColor = value === "|" ? "#a074c4" : "#ce9178";
     return (
       <div style={baseStyle}>
