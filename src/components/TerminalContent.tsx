@@ -14,6 +14,7 @@ import {
   BASH_WRITESPEC_START,
   BASH_SPECDESIGN_START,
   BASH_TEMPLATE_START,
+  ASK_USER_START,
   ASK_USER_END,
   SPEC_WRITE_START,
   SPEC_SUMMARY_START,
@@ -26,6 +27,10 @@ import {
   YAML_WRITE_START,
   FINAL_SUMMARY_START,
   TIMER2_START,
+  THIRD_PROMPT_TEXT,
+  THIRD_PROMPT_SUBMIT,
+  BASH_FLEETGO_START,
+  FLEETGO_BACKGROUND,
 } from "../constants/timing";
 import { GREEN, BLUE, GRAY, DIM, TEXT, BOLD_TEXT, ORANGE } from "../constants/theme";
 import {
@@ -51,8 +56,21 @@ export const TerminalContent: React.FC = () => {
 
   const runningTokens = useMemo(() => {
     if (frame < SKILL_START) return null;
-    const elapsed = (frame - SKILL_START) / fps;
-    const tokens = Math.floor(elapsed * 420);
+    const FAST_RATE = 420;
+    const SLOW_RATE = 40;
+    let tokens: number;
+    if (frame < ASK_USER_START) {
+      tokens = Math.floor(((frame - SKILL_START) / fps) * FAST_RATE);
+    } else if (frame < ASK_USER_END) {
+      const beforeAuq = ((ASK_USER_START - SKILL_START) / fps) * FAST_RATE;
+      const duringAuq = ((frame - ASK_USER_START) / fps) * SLOW_RATE;
+      tokens = Math.floor(beforeAuq + duringAuq);
+    } else {
+      const beforeAuq = ((ASK_USER_START - SKILL_START) / fps) * FAST_RATE;
+      const duringAuq = ((ASK_USER_END - ASK_USER_START) / fps) * SLOW_RATE;
+      const afterAuq = ((frame - ASK_USER_END) / fps) * FAST_RATE;
+      tokens = Math.floor(beforeAuq + duringAuq + afterAuq);
+    }
     if (tokens > 1000) return `${(tokens / 1000).toFixed(1)}k`;
     return `${tokens}`;
   }, [frame, fps]);
@@ -71,6 +89,20 @@ export const TerminalContent: React.FC = () => {
     return `${tokens}`;
   }, [frame, fps]);
 
+  const phase3Seconds = useMemo(() => {
+    if (frame < THIRD_PROMPT_SUBMIT) return null;
+    const elapsed = Math.floor((frame - THIRD_PROMPT_SUBMIT) / fps);
+    return `${elapsed}s`;
+  }, [frame, fps]);
+
+  const phase3Tokens = useMemo(() => {
+    if (frame < THIRD_PROMPT_SUBMIT) return null;
+    const elapsed = (frame - THIRD_PROMPT_SUBMIT) / fps;
+    const tokens = 105 + Math.floor(elapsed * 3);
+    if (tokens > 1000) return `${(tokens / 1000).toFixed(1)}k`;
+    return `${tokens}`;
+  }, [frame, fps]);
+
   const scrollOffset = useMemo(() => {
     if (frame < ASSESSMENT_START) return 0;
     if (frame < BASH_WRITESPEC_START) {
@@ -81,7 +113,7 @@ export const TerminalContent: React.FC = () => {
         { extrapolateRight: "clamp" },
       );
     }
-    if (frame < SPEC_SUMMARY_START) {
+    if (frame < ASK_USER_START) {
       return interpolate(
         frame,
         [BASH_WRITESPEC_START, BASH_TEMPLATE_START + 20],
@@ -89,11 +121,34 @@ export const TerminalContent: React.FC = () => {
         { extrapolateRight: "clamp" },
       );
     }
+    // Hold scroll steady while AUQ is open
+    if (frame < ASK_USER_END) {
+      return 260;
+    }
+    // After AUQ closes, scroll to reveal user answers + Write spec + status
+    if (frame < SPEC_SUMMARY_START) {
+      return interpolate(
+        frame,
+        [ASK_USER_END, ASK_USER_END + 25],
+        [260, 360],
+        { extrapolateRight: "clamp" },
+      );
+    }
+    // Spec summary + timer appear, keep scrolling to keep status visible
+    if (frame < TIMER1_START) {
+      return interpolate(
+        frame,
+        [SPEC_SUMMARY_START, SPEC_SUMMARY_START + 30],
+        [360, 440],
+        { extrapolateRight: "clamp" },
+      );
+    }
+    // Timer shown, user types second prompt
     if (frame < SECOND_PROMPT_SUBMIT) {
       return interpolate(
         frame,
-        [SPEC_SUMMARY_START, TIMER1_START],
-        [260, 420],
+        [TIMER1_START, SECOND_PROMPT_SUBMIT],
+        [440, 500],
         { extrapolateRight: "clamp" },
       );
     }
@@ -101,14 +156,30 @@ export const TerminalContent: React.FC = () => {
       return interpolate(
         frame,
         [SECOND_PROMPT_SUBMIT, BASH_FLEETYAML_START],
-        [420, 650],
+        [500, 730],
+        { extrapolateRight: "clamp" },
+      );
+    }
+    if (frame < THIRD_PROMPT_SUBMIT) {
+      return interpolate(
+        frame,
+        [YAML_WRITE_START, TIMER2_START],
+        [730, 860],
+        { extrapolateRight: "clamp" },
+      );
+    }
+    if (frame < BASH_FLEETGO_START) {
+      return interpolate(
+        frame,
+        [THIRD_PROMPT_SUBMIT, BASH_FLEETGO_START],
+        [860, 960],
         { extrapolateRight: "clamp" },
       );
     }
     return interpolate(
       frame,
-      [YAML_WRITE_START, TIMER2_START],
-      [650, 780],
+      [BASH_FLEETGO_START, BASH_FLEETGO_START + 55],
+      [960, 1180],
       { extrapolateRight: "clamp" },
     );
   }, [frame]);
@@ -539,6 +610,127 @@ export const TerminalContent: React.FC = () => {
         phase2Tokens && (
           <div style={{ marginTop: 8 }}>
             <StatusLine seconds={phase2Seconds} tokens={phase2Tokens} />
+          </div>
+        )}
+
+      {/* ---- Phase 3: User kicks off fleet go ---- */}
+
+      {/* Third submitted prompt */}
+      {frame >= THIRD_PROMPT_SUBMIT && (
+        <div style={{ marginBottom: 12, marginTop: 16 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              fontSize: 13,
+              lineHeight: 1.6,
+            }}
+          >
+            <span style={{ color: BLUE, marginRight: 8, fontWeight: 700 }}>
+              ❯
+            </span>
+            <span style={{ color: TEXT, whiteSpace: "pre-wrap" }}>
+              {THIRD_PROMPT_TEXT}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Bash(fleet go) — persistent header, content transitions below */}
+      <FadeIn
+        start={BASH_FLEETGO_START}
+        style={{ marginBottom: 4, marginTop: 8 }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <Dot color={frame >= FLEETGO_BACKGROUND ? GREEN : BLUE} />
+          <span style={{ fontWeight: 700, color: BOLD_TEXT, fontSize: 13 }}>
+            Bash(fleet go)
+          </span>
+        </div>
+
+        {/* Clack output — fades out then unmounts at ctrl+b */}
+        {frame < FLEETGO_BACKGROUND && (
+          <div
+            style={{
+              paddingLeft: 22,
+              fontSize: 12,
+              lineHeight: 1.7,
+              marginTop: 4,
+              opacity: interpolate(
+                frame,
+                [FLEETGO_BACKGROUND - 8, FLEETGO_BACKGROUND],
+                [1, 0],
+                { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
+              ),
+            }}
+          >
+            <div style={{ color: DIM }}>
+              {"  "}┌{"  "}
+              <span style={{ color: TEXT, fontWeight: 600 }}>fleet go</span>
+            </div>
+            <div style={{ color: DIM }}>
+              {"  "}│{"  "}
+              <span style={{ color: GRAY }}>
+                target: feature/rate-limiting · 2 tasks
+              </span>
+            </div>
+            <FadeIn start={BASH_FLEETGO_START + 18} style={{}}>
+              <div style={{ color: DIM }}>
+                {"  "}◇{"  "}
+                <span style={{ color: TEXT, fontWeight: 600 }}>fleet up</span>
+              </div>
+              <div style={{ color: DIM }}>
+                {"  "}│{"  "}
+                <span style={{ color: GRAY }}>middleware · config</span>
+              </div>
+            </FadeIn>
+            <FadeIn start={BASH_FLEETGO_START + 36} style={{}}>
+              <div style={{ color: DIM }}>
+                {"  "}◇{"  "}
+                <span style={{ color: TEXT, fontWeight: 600 }}>
+                  fleet launch
+                </span>
+              </div>
+              <div style={{ color: DIM }}>
+                {"  "}│{"  "}
+                <span style={{ color: GRAY }}>2 agents spawned</span>
+              </div>
+            </FadeIn>
+            <FadeIn start={BASH_FLEETGO_START + 50} style={{}}>
+              <div style={{ color: DIM, marginTop: 4 }}>
+                {"  "}(ctrl+b to run in background)
+              </div>
+            </FadeIn>
+          </div>
+        )}
+
+        {/* Background state — fades in after ctrl+b */}
+        {frame >= FLEETGO_BACKGROUND && (
+          <div
+            style={{
+              opacity: interpolate(
+                frame,
+                [FLEETGO_BACKGROUND, FLEETGO_BACKGROUND + 8],
+                [0, 1],
+                { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
+              ),
+            }}
+          >
+            <SubLine>Running in the background (↓ to manage)</SubLine>
+          </div>
+        )}
+      </FadeIn>
+
+      {/* Phase 3 running status — stays as scurrying, low token rate while bg */}
+      {frame >= FLEETGO_BACKGROUND + 10 &&
+        phase3Seconds &&
+        phase3Tokens && (
+          <div style={{ marginTop: 8 }}>
+            <StatusLine
+              seconds={phase3Seconds}
+              tokens={phase3Tokens}
+              tokenDirection="↓"
+            />
           </div>
         )}
     </div>

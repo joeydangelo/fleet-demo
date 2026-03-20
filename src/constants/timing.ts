@@ -27,18 +27,17 @@ export const ASK_USER_END = ASK_USER_START + 200; // ~6.7 seconds (2 questions +
 
 export const SPEC_WRITE_START = ASK_USER_END + 20;
 
-// Terminal starts repositioning when Write(...) line appears
-export const TERMINAL_REPOSITION_START = SPEC_WRITE_START + 15;
-// VSCode editor slides in after terminal has moved
-export const SPEC_EDITOR_START = TERMINAL_REPOSITION_START + 20;
+// Phase 1: spec summary + timer, then editor opens so user can read spec
+export const SPEC_SUMMARY_START = SPEC_WRITE_START + 12;
+export const TIMER1_START = SPEC_SUMMARY_START + 40;
 
-// Phase 1 ends: spec summary + first timer
-export const SPEC_SUMMARY_START = SPEC_EDITOR_START + 25;
-export const TIMER1_START = SPEC_SUMMARY_START + 60;
+// Terminal repositions and VSCode editor slides in right after Write line
+export const TERMINAL_REPOSITION_START = SPEC_WRITE_START + 8;
+export const SPEC_EDITOR_START = TERMINAL_REPOSITION_START + 15;
 
-// Phase 2: user approves spec, orchestrator decomposes
+// User reads spec in editor, then approves
 export const SECOND_PROMPT_TEXT = "looks good, carry on";
-export const SECOND_PROMPT_START = TIMER1_START + 25;
+export const SECOND_PROMPT_START = SPEC_EDITOR_START + 160;
 export const SECOND_PROMPT_SUBMIT = SECOND_PROMPT_START + 35;
 
 export const BASH_DECOMPOSE_START = SECOND_PROMPT_SUBMIT + 20;
@@ -48,3 +47,15 @@ export const BASH_FLEETYAML_START = BASH_TASKSPLIT_START + 25;
 export const YAML_WRITE_START = BASH_FLEETYAML_START + 25;
 export const FINAL_SUMMARY_START = YAML_WRITE_START + 15;
 export const TIMER2_START = FINAL_SUMMARY_START + 55;
+
+// Phase 3: user kicks off fleet go
+export const THIRD_PROMPT_TEXT = "yes, kick it off";
+export const THIRD_PROMPT_START = TIMER2_START + 15;
+export const THIRD_PROMPT_SUBMIT = THIRD_PROMPT_START + 25;
+
+// Editor exits and terminal recenters before user types fleet go prompt
+export const EDITOR_EXIT_START = THIRD_PROMPT_START - 15;
+
+export const BASH_FLEETGO_START = THIRD_PROMPT_SUBMIT + 12;
+export const FLEETGO_BACKGROUND = BASH_FLEETGO_START + 95;
+export const TIMER3_START = FLEETGO_BACKGROUND + 25;

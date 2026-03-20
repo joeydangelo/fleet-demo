@@ -1,13 +1,17 @@
 import { AbsoluteFill, useCurrentFrame, useVideoConfig, spring, interpolate } from "remotion";
 import { MacTerminal } from "./components/MacTerminal";
 import { VscodeEditor } from "./components/VscodeEditor";
-import { TERMINAL_REPOSITION_START, SPEC_EDITOR_START } from "./constants/timing";
+import {
+  TERMINAL_REPOSITION_START,
+  SPEC_EDITOR_START,
+  EDITOR_EXIT_START,
+} from "./constants/timing";
 
 export const MyComposition: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  // Terminal repositions: slides left and scales down to make room for editor
+  // Phase 1: terminal slides left + scales down to make room for editor
   const repositionFrame = frame - TERMINAL_REPOSITION_START;
   const reposition = repositionFrame >= 0
     ? spring({
@@ -17,10 +21,28 @@ export const MyComposition: React.FC = () => {
       })
     : 0;
 
-  const terminalX = interpolate(reposition, [0, 1], [0, -300]);
-  const terminalScale = interpolate(reposition, [0, 1], [1, 0.82]);
+  // Phase 3: editor exits, terminal recenters + scales back up
+  const restoreFrame = frame - EDITOR_EXIT_START;
+  const restore = restoreFrame >= 0
+    ? spring({
+        frame: restoreFrame,
+        fps,
+        config: { damping: 200 },
+      })
+    : 0;
 
-  const editorVisible = frame >= SPEC_EDITOR_START;
+  // Combined progress: reposition pushes left, restore brings back
+  const layoutProgress = reposition * (1 - restore);
+
+  const terminalX = interpolate(layoutProgress, [0, 1], [0, -300]);
+  const terminalScale = interpolate(layoutProgress, [0, 1], [1, 0.82]);
+
+  // Editor: visible after spec start, slides out during restore
+  const editorVisible = frame >= SPEC_EDITOR_START && restore < 1;
+  const editorSlideOut = interpolate(restore, [0, 1], [0, 120]);
+  const editorOpacity = interpolate(restore, [0, 0.6], [1, 0], {
+    extrapolateRight: "clamp",
+  });
 
   return (
     <AbsoluteFill
@@ -34,7 +56,7 @@ export const MyComposition: React.FC = () => {
         backgroundSize: "24px 24px",
       }}
     >
-      {/* Terminal — animates left when spec editor appears */}
+      {/* Terminal — animates left for editor, then back to center for fleet go */}
       <div
         style={{
           transform: `translateX(${terminalX}px) scale(${terminalScale})`,
@@ -44,12 +66,13 @@ export const MyComposition: React.FC = () => {
         <MacTerminal />
       </div>
 
-      {/* VSCode editor — appears to the right of terminal */}
+      {/* VSCode editor — slides in from right, slides out when fleet go starts */}
       {editorVisible && (
         <div
           style={{
             position: "absolute",
-            right: interpolate(reposition, [0, 1], [-600, 40]),
+            right: interpolate(reposition, [0, 1], [-600, 40]) - editorSlideOut,
+            opacity: editorOpacity,
           }}
         >
           <VscodeEditor />

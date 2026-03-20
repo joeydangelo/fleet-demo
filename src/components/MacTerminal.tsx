@@ -1,5 +1,5 @@
 import React from "react";
-import { useCurrentFrame, interpolate } from "remotion";
+import { useCurrentFrame, useVideoConfig, interpolate, spring } from "remotion";
 import {
   PROMPT_START,
   PROMPT_TEXT,
@@ -9,6 +9,10 @@ import {
   SECOND_PROMPT_TEXT,
   SECOND_PROMPT_START,
   SECOND_PROMPT_SUBMIT,
+  THIRD_PROMPT_TEXT,
+  THIRD_PROMPT_START,
+  THIRD_PROMPT_SUBMIT,
+  FLEETGO_BACKGROUND,
 } from "../constants/timing";
 import { MONO } from "../constants/theme";
 import { TerminalContent } from "./TerminalContent";
@@ -17,27 +21,18 @@ import { InputCursor } from "./InputCursor";
 
 export const MacTerminal: React.FC = () => {
   const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
 
   const promptVisible = frame >= PROMPT_START;
   const submitted = frame >= SUBMIT_FRAME;
 
-  const askActive = frame >= ASK_USER_START && frame < ASK_USER_END;
   const secondPromptActive =
     frame >= SECOND_PROMPT_START && frame < SECOND_PROMPT_SUBMIT;
+  const thirdPromptActive =
+    frame >= THIRD_PROMPT_START && frame < THIRD_PROMPT_SUBMIT;
 
-  // Smooth fade for input box around AUQ transitions
-  const inputBoxOpacity =
-    frame >= ASK_USER_START - 10 && frame < ASK_USER_START
-      ? interpolate(frame, [ASK_USER_START - 10, ASK_USER_START], [1, 0], {
-          extrapolateRight: "clamp",
-        })
-      : frame >= ASK_USER_END && frame < ASK_USER_END + 10
-        ? interpolate(frame, [ASK_USER_END, ASK_USER_END + 10], [0, 1], {
-            extrapolateLeft: "clamp",
-          })
-        : askActive
-          ? 0
-          : 1;
+  // Input box stays visible at all times — AUQ overlays on top
+  const inputBoxOpacity = 1;
 
   return (
     <div
@@ -126,14 +121,12 @@ export const MacTerminal: React.FC = () => {
         <TerminalContent />
       </div>
 
-      {/* Bottom area */}
-      {askActive ? (
-        <AskUserQuestion />
-      ) : (
+      {/* Bottom area — relative so AUQ can overlay */}
+      <div style={{ position: "relative", flexShrink: 0 }}>
+        {/* Input box */}
         <div
           style={{
             backgroundColor: "#faf9f7",
-            flexShrink: 0,
             paddingLeft: 20,
             paddingRight: 20,
             opacity: inputBoxOpacity,
@@ -143,9 +136,8 @@ export const MacTerminal: React.FC = () => {
             style={{
               borderTop: "1px solid #c8c4be",
               borderBottom: "1px solid #c8c4be",
-              paddingTop: 14,
-              paddingBottom: 14,
-              marginBottom: 12,
+              paddingTop: 10,
+              paddingBottom: 10,
             }}
           >
             {promptVisible && !submitted ? (
@@ -174,6 +166,19 @@ export const MacTerminal: React.FC = () => {
                 {SECOND_PROMPT_TEXT}
                 <InputCursor />
               </span>
+            ) : thirdPromptActive ? (
+              <span
+                style={{
+                  fontFamily: MONO,
+                  fontSize: 13,
+                  color: "#3d3d3d",
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-word",
+                }}
+              >
+                {THIRD_PROMPT_TEXT}
+                <InputCursor />
+              </span>
             ) : (
               <span
                 style={{
@@ -187,7 +192,62 @@ export const MacTerminal: React.FC = () => {
             )}
           </div>
         </div>
-      )}
+
+        {/* Status bar — bypass permissions always visible, bash info appears after ctrl+b */}
+        <div
+          style={{
+            backgroundColor: "#faf9f7",
+            display: "flex",
+            alignItems: "center",
+            paddingLeft: 20,
+            paddingRight: 20,
+            paddingTop: 6,
+            paddingBottom: 10,
+            fontFamily: MONO,
+            fontSize: 11,
+            color: "#888",
+          }}
+        >
+          <span style={{ whiteSpace: "pre" }}>
+            <span style={{ color: "#FF6D84" }}>⏵⏵ bypass permissions on</span>
+            {frame >= FLEETGO_BACKGROUND && (() => {
+              const bashSpring = spring({
+                frame: frame - FLEETGO_BACKGROUND,
+                fps,
+                config: { damping: 18, stiffness: 120, mass: 0.8 },
+              });
+              return (
+                <span
+                  style={{
+                    display: "inline-block",
+                    opacity: bashSpring,
+                    transform: `translateX(${interpolate(bashSpring, [0, 1], [8, 0])}px)`,
+                  }}
+                >
+                  <span> · </span>
+                  <span style={{ color: "#56b6c2" }}>1 bash</span>
+                  <span> · ↓ to manage · esc to interrupt</span>
+                </span>
+              );
+            })()}
+          </span>
+        </div>
+
+        {/* AUQ overlays input box + bypass permissions when active */}
+        {frame >= ASK_USER_START && frame < ASK_USER_END + 15 && (
+          <div
+            style={{
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              zIndex: 10,
+            }}
+          >
+            <AskUserQuestion />
+          </div>
+        )}
+      </div>
     </div>
   );
 };

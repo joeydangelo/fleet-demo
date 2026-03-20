@@ -126,7 +126,7 @@ export const VscodeEditor: React.FC = () => {
   // --- Spec scroll ---
   const specScrollStart = 25;
   const specScrollEnd = SECOND_PROMPT_START - SPEC_EDITOR_START - 20;
-  const specScrollDuration = specScrollEnd - specScrollStart;
+  const specScrollDuration = Math.max(30, specScrollEnd - specScrollStart);
   const specContentHeight = SPEC_LINES.length * LINE_HEIGHT;
   const specMaxScroll = Math.max(0, specContentHeight - VISIBLE_LINES * LINE_HEIGHT);
   const specScrollY = interpolate(

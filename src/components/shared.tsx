@@ -67,7 +67,8 @@ export const StatusLine: React.FC<{
   seconds: string;
   tokens: string;
   label?: string;
-}> = ({ seconds, tokens, label = "Scurrying…" }) => (
+  tokenDirection?: string;
+}> = ({ seconds, tokens, label = "Scurrying…", tokenDirection = "↑" }) => (
   <div
     style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 6 }}
   >
@@ -76,7 +77,7 @@ export const StatusLine: React.FC<{
       {label}
     </span>
     <span style={{ color: DIM, fontSize: 12 }}>
-      ({seconds} · ↑ {tokens} tokens)
+      ({seconds} · {tokenDirection} {tokens} tokens)
     </span>
   </div>
 );
