@@ -1,5 +1,5 @@
 import { AbsoluteFill } from "remotion";
-import { MacTerminal } from "./MacTerminal";
+import { MacTerminal } from "./components/MacTerminal";
 
 export const MyComposition = () => {
   return (
