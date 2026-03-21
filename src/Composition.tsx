@@ -7,6 +7,7 @@ import {
   SPEC_EDITOR_START,
   EDITOR_EXIT_START,
   FLEETGO_BACKGROUND,
+  OUTRO_START,
 } from "./constants/timing";
 import { SPRING_LAYOUT } from "./constants/theme";
 
@@ -61,6 +62,22 @@ export const FleetDemoComposition: React.FC = () => {
   const fleetGoShift = interpolate(macTermReposition, [0, 1], [0, -280]);
   const fleetGoScale = interpolate(macTermReposition, [0, 1], [1, 0.85]);
 
+  // Outro: everything scales down to center and disappears
+  const outroFrame = frame - OUTRO_START;
+  const outroProgress = outroFrame >= 0
+    ? spring({
+        frame: outroFrame,
+        fps,
+        config: { damping: 28, stiffness: 120, mass: 0.9 },
+      })
+    : 0;
+
+  const outroScale = interpolate(outroProgress, [0, 1], [1, 0]);
+  const outroRotate = interpolate(outroProgress, [0, 1], [0, -3]);
+  const outroOpacity = interpolate(outroProgress, [0, 0.7], [1, 0], {
+    extrapolateRight: "clamp",
+  });
+
   return (
     <AbsoluteFill
       style={{
@@ -73,40 +90,54 @@ export const FleetDemoComposition: React.FC = () => {
         backgroundSize: "24px 24px",
       }}
     >
-      {/* Fleet CLI — animates left for editor, recenters, then shifts left again for mac terminal */}
+      {/* Outro wrapper — scales everything down to center */}
       <div
         style={{
-          transform: `translateX(${terminalX + fleetGoShift}px) scale(${terminalScale * fleetGoScale})`,
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          width: "100%",
+          height: "100%",
+          transform: `scale(${outroScale}) rotate(${outroRotate}deg)`,
+          opacity: outroOpacity,
           transformOrigin: "center center",
         }}
       >
-        <FleetCli />
+        {/* Fleet CLI — animates left for editor, recenters, then shifts left again for mac terminal */}
+        <div
+          style={{
+            transform: `translateX(${terminalX + fleetGoShift}px) scale(${terminalScale * fleetGoScale})`,
+            transformOrigin: "center center",
+          }}
+        >
+          <FleetCli />
+        </div>
+
+        {/* VSCode editor — slides in from right, slides out when fleet go starts */}
+        {editorVisible && (
+          <div
+            style={{
+              position: "absolute",
+              right: interpolate(reposition, [0, 1], [-600, 40]) - editorSlideOut,
+              opacity: editorOpacity,
+            }}
+          >
+            <VscodeEditor />
+          </div>
+        )}
+
+        {/* Mac terminal — slides in from right during fleet go background */}
+        {frame >= FLEETGO_BACKGROUND && (
+          <div
+            style={{
+              position: "absolute",
+              right: interpolate(macTermReposition, [0, 1], [-600, 40]),
+            }}
+          >
+            <MacTerminal />
+          </div>
+        )}
       </div>
-
-      {/* VSCode editor — slides in from right, slides out when fleet go starts */}
-      {editorVisible && (
-        <div
-          style={{
-            position: "absolute",
-            right: interpolate(reposition, [0, 1], [-600, 40]) - editorSlideOut,
-            opacity: editorOpacity,
-          }}
-        >
-          <VscodeEditor />
-        </div>
-      )}
-
-      {/* Mac terminal — slides in from right during fleet go background */}
-      {frame >= FLEETGO_BACKGROUND && (
-        <div
-          style={{
-            position: "absolute",
-            right: interpolate(macTermReposition, [0, 1], [-600, 40]),
-          }}
-        >
-          <MacTerminal />
-        </div>
-      )}
     </AbsoluteFill>
   );
 };

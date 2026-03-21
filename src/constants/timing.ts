@@ -89,3 +89,6 @@ export const DASH_CFG_REVIEW = 470; // config enters review
 export const DASH_CFG_DONE = 520; // config done + PASS
 export const DASH_MERGE_CFG = 550; // config merged
 export const DASH_ALL_MERGED = DASH_MERGE_CFG; // both merged
+
+// Outro — everything scales down and disappears
+export const OUTRO_START = BG_COMPLETE + 20;
