@@ -1,5 +1,6 @@
 import { Sequence, interpolate, staticFile } from "remotion";
 import { Audio } from "@remotion/media";
+import { uiSwitch } from "@remotion/sfx";
 import {
   SUBMIT_FRAME,
   SCOUTS_START,
@@ -15,6 +16,11 @@ import {
   FINAL_MESSAGE_START,
   OUTRO_START,
 } from "../constants/timing";
+
+// "fleet dashboard" typing timing — must match MacTerminal.tsx constants
+const COMMAND_TEXT = "fleet dashboard";
+const TYPE_DELAY_SECONDS = 0.7;
+const CHAR_FRAMES = 2;
 
 const CLAMP = { extrapolateLeft: "clamp" as const, extrapolateRight: "clamp" as const };
 
@@ -135,6 +141,19 @@ export function AudioLayer({ fps }: { fps: number }): React.ReactElement {
       <Sequence from={OUTRO_START} layout="none">
         <Audio src={staticFile("whip.wav")} volume={0.5} />
       </Sequence>
+
+      {/* SFX: Keyboard clicks while typing "fleet dashboard" — one per character */}
+      {Array.from({ length: COMMAND_TEXT.length }, (_, i) => {
+        const typeDelay = Math.round(fps * TYPE_DELAY_SECONDS);
+        const keyFrame = FLEETGO_BACKGROUND + typeDelay + i * CHAR_FRAMES;
+        // Slight volume variation for natural feel
+        const vol = 0.25 + (i % 3) * 0.05;
+        return (
+          <Sequence key={`key-${i}`} from={keyFrame} durationInFrames={CHAR_FRAMES} layout="none">
+            <Audio src={uiSwitch} volume={vol} playbackRate={1.8} />
+          </Sequence>
+        );
+      })}
 
       {/* SFX: Chime when fleet go completes */}
       <Sequence from={FLEETGO_COMPLETE} layout="none">
