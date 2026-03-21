@@ -1,14 +1,17 @@
 import { useMemo } from "react";
 import { useCurrentFrame, useVideoConfig } from "remotion";
 
-export function useElapsedSeconds(startFrame: number): string | null {
+export function useElapsedSeconds(startFrame: number, speed: number = 1): string | null {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   return useMemo(() => {
     if (frame < startFrame) return null;
-    const elapsed = Math.floor((frame - startFrame) / fps);
-    return `${elapsed}s`;
-  }, [frame, fps, startFrame]);
+    const elapsed = Math.floor(((frame - startFrame) / fps) * speed);
+    if (elapsed < 60) return `${elapsed}s`;
+    const m = Math.floor(elapsed / 60);
+    const s = elapsed % 60;
+    return `${m}m ${s.toString().padStart(2, "0")}s`;
+  }, [frame, fps, startFrame, speed]);
 }
 
 type TokenSegment = {

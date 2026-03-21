@@ -9,7 +9,7 @@ export const YAML_FILENAME = "fleet.yaml";
 export const YAML_LINES: YamlLine[] = [
   { text: "# .fleet/fleet.yaml", style: "comment" },
   { text: "", style: "blank" },
-  { text: "target: feature/rate-limiting", style: "key-value" },
+  { text: "target: feat/rate-limiting", style: "key-value" },
   { text: "model: sonnet", style: "key-value" },
   { text: "spec: .fleet/specs/spec-2026-03-20-rate-limiting.md", style: "key-value" },
   { text: "", style: "blank" },

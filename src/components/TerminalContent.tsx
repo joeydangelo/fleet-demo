@@ -72,7 +72,7 @@ const PHASE2_SEGMENTS = [
 ];
 
 const PHASE3_SEGMENTS = [
-  { startFrame: THIRD_PROMPT_SUBMIT, endFrame: Infinity, rate: 3 },
+  { startFrame: FLEETGO_BACKGROUND, endFrame: Infinity, rate: 3 },
 ];
 
 const SCOUT_DATA: (ScoutData & { isLast: boolean })[] = [
@@ -92,8 +92,8 @@ export const TerminalContent: React.FC = () => {
   const phase2Seconds = useElapsedSeconds(SECOND_PROMPT_SUBMIT);
   const phase2Tokens = useTokenCounter(SECOND_PROMPT_SUBMIT, PHASE2_SEGMENTS);
 
-  const phase3Seconds = useElapsedSeconds(THIRD_PROMPT_SUBMIT);
-  const phase3Tokens = useTokenCounter(THIRD_PROMPT_SUBMIT, PHASE3_SEGMENTS, 105);
+  const phase3Seconds = useElapsedSeconds(FLEETGO_BACKGROUND, 15);
+  const phase3Tokens = useTokenCounter(FLEETGO_BACKGROUND, PHASE3_SEGMENTS, 105);
 
   const scrollOffset = useTerminalScroll();
 
@@ -322,7 +322,7 @@ export const TerminalContent: React.FC = () => {
               <div>- launch — spawned 2 builder agents</div>
               <FadeIn start={FLEETGO_COMPLETE + 18} style={{}}>
                 <div>- watch — agents committed, submitted for review</div>
-                <div>- merge — merged clean into feature/rate-limiting</div>
+                <div>- merge — merged clean into feat/rate-limiting</div>
               </FadeIn>
               <FadeIn start={FLEETGO_COMPLETE + 24} style={{}}>
                 <div>- down — cleaned up worktrees, archived sessions</div>
@@ -333,7 +333,7 @@ export const TerminalContent: React.FC = () => {
       </FadeIn>
 
       <FadeIn start={BASH_GITLOG_START} style={{ marginBottom: 4, marginTop: 8 }}>
-        <ToolHeader label="Bash(git log --oneline feature/rate-limiting ^main)" />
+        <ToolHeader label="Bash(git log --oneline feat/rate-limiting ^main)" />
         {frame >= BASH_GITLOG_START + 10 && (
           <div style={{ paddingLeft: TOOL_INDENT, fontSize: 12, lineHeight: 1.6 }}>
             <div style={{ color: DIM }}>
@@ -366,7 +366,7 @@ export const TerminalContent: React.FC = () => {
       >
         <SummaryBlock>
           <SummaryParagraph>
-            All 18 tests pass. Both tasks merged into feature/rate-limiting —
+            All 18 tests pass. Both tasks merged into feat/rate-limiting —
             middleware handles sliding window + Redis, config wires per-route
             limits and response headers.
           </SummaryParagraph>

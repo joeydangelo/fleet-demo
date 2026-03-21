@@ -45,7 +45,7 @@ export const FleetGoBlock: React.FC = () => {
           <div style={{ color: DIM }}>
             {"  "}│{"  "}
             <span style={{ color: GRAY }}>
-              target: feature/rate-limiting · 2 tasks
+              target: feat/rate-limiting · 2 tasks
             </span>
           </div>
           <FadeIn start={BASH_FLEETGO_START + 18} style={{}}>

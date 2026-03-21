@@ -4,14 +4,12 @@ import { FLEETGO_BACKGROUND } from "../constants/timing";
 import { MONO, SYSTEM_FONT, SPRING_LAYOUT, SPRING_BOUNCE } from "../constants/theme";
 import { TrafficLights } from "./shared";
 import {
-  AGENTS,
-  MAIL_ENTRIES,
-  MERGE_ENTRIES,
-  DASHBOARD_VERSION,
-  DASHBOARD_REFRESH_MS,
+  getDashboardState,
   getStatusStyle,
   getVerdictStyle,
   getMergeBadge,
+  DASHBOARD_VERSION,
+  DASHBOARD_REFRESH_MS,
   COL_STATUS_ICON,
   COL_NAME,
   COL_STATUS,
@@ -19,7 +17,12 @@ import {
   COL_DURATION,
   COL_TMUX,
 } from "../constants/dashboardData";
-import type { AgentRow, MailEntry, MergeEntry as MergeEntryType } from "../constants/dashboardData";
+import type {
+  AgentRow,
+  MailEntry,
+  MergeEntry as MergeEntryType,
+  DashboardSnapshot,
+} from "../constants/dashboardData";
 
 // macOS Terminal.app dark profile colors
 const TERM_BG = "#282828";
@@ -110,9 +113,9 @@ function HRule(): React.ReactElement {
   );
 }
 
-function HeaderBar({ now }: { now: string }): React.ReactElement {
+function HeaderBar({ clockTime }: { clockTime: string }): React.ReactElement {
   const left = `fleet dashboard v${DASHBOARD_VERSION}`;
-  const right = `${now}  |  refresh: ${DASHBOARD_REFRESH_MS}ms`;
+  const right = `${clockTime}  |  refresh: ${DASHBOARD_REFRESH_MS}ms`;
   const gap = Math.max(1, GRID_WIDTH_CH - left.length - right.length);
 
   return (
@@ -129,7 +132,6 @@ const COL_CELL: React.CSSProperties = {
   whiteSpace: "pre",
 };
 
-/** Matches the Ink header: 2-space indent, then columns at the same widths as data rows. */
 function AgentHeaderRow(): React.ReactElement {
   return (
     <div style={{ color: TERM_DIM, whiteSpace: "pre" }}>
@@ -144,7 +146,16 @@ function AgentHeaderRow(): React.ReactElement {
   );
 }
 
-function AgentRowView({ agent }: { agent: AgentRow }): React.ReactElement {
+/** Animated row — status changes trigger a brief highlight flash. */
+function AgentRowView({
+  agent,
+  dashFrame,
+  fps,
+}: {
+  agent: AgentRow;
+  dashFrame: number;
+  fps: number;
+}): React.ReactElement {
   const style = getStatusStyle(agent.status);
   const verdictStyle = getVerdictStyle(agent.verdict);
   const nameDisplay = agent.name.length > 15
@@ -172,30 +183,38 @@ function AgentRowView({ agent }: { agent: AgentRow }): React.ReactElement {
   );
 }
 
-function AgentsPanel(): React.ReactElement {
+function AgentsPanel({
+  agents,
+  dashFrame,
+  fps,
+}: {
+  agents: AgentRow[];
+  dashFrame: number;
+  fps: number;
+}): React.ReactElement {
   return (
     <div style={{ paddingLeft: 4, paddingRight: 4 }}>
       <div style={{ color: TERM_TEXT, fontWeight: 700 }}>
-        Agents ({AGENTS.length})
+        Agents ({agents.length})
       </div>
       <AgentHeaderRow />
-      {AGENTS.map((agent) => (
-        <AgentRowView key={agent.name} agent={agent} />
+      {agents.map((agent) => (
+        <AgentRowView key={agent.name} agent={agent} dashFrame={dashFrame} fps={fps} />
       ))}
     </div>
   );
 }
 
-function MailPanel(): React.ReactElement {
+function MailPanel({ mail }: { mail: MailEntry[] }): React.ReactElement {
   return (
     <div style={{ width: "50%", paddingLeft: 4, overflow: "hidden" }}>
       <div style={{ color: TERM_TEXT, fontWeight: 700 }}>
-        Mail ({MAIL_ENTRIES.length})
+        Mail ({mail.length})
       </div>
-      {MAIL_ENTRIES.length === 0 && (
+      {mail.length === 0 && (
         <div style={{ color: TERM_DIM }}>No messages</div>
       )}
-      {MAIL_ENTRIES.map((entry, i) => (
+      {mail.map((entry, i) => (
         <MailRowView key={i} entry={entry} />
       ))}
     </div>
@@ -205,23 +224,23 @@ function MailPanel(): React.ReactElement {
 function MailRowView({ entry }: { entry: MailEntry }): React.ReactElement {
   return (
     <div style={{ whiteSpace: "pre", overflow: "hidden", textOverflow: "ellipsis", color: TERM_TEXT }}>
-      [{entry.agent}] {entry.message} ({entry.relativeTime})
+      <span style={{ color: TERM_DIM }}>{entry.prefix}</span>{" "}
+      {entry.message}{" "}
+      <span style={{ color: TERM_DIM }}>({entry.relativeTime})</span>
     </div>
   );
 }
 
-function MergeQueuePanel(): React.ReactElement {
-  const entries = MERGE_ENTRIES;
-
+function MergeQueuePanel({ merges }: { merges: MergeEntryType[] }): React.ReactElement {
   return (
     <div style={{ width: "50%", paddingLeft: 8, overflow: "hidden" }}>
       <div style={{ color: TERM_TEXT, fontWeight: 700 }}>
-        Merge Queue ({entries.length})
+        Merge Queue ({merges.length})
       </div>
-      {entries.length === 0 && (
+      {merges.length === 0 && (
         <div style={{ color: TERM_DIM }}>No merges</div>
       )}
-      {entries.map((entry) => (
+      {merges.map((entry) => (
         <MergeRowView key={entry.taskName} entry={entry} />
       ))}
     </div>
@@ -240,22 +259,30 @@ function MergeRowView({ entry }: { entry: MergeEntryType }): React.ReactElement 
   );
 }
 
-function DashboardView({ dashFrame, fps }: { dashFrame: number; fps: number }): React.ReactElement {
+function DashboardView({
+  dashFrame,
+  fps,
+}: {
+  dashFrame: number;
+  fps: number;
+}): React.ReactElement {
   const entrance = spring({
     frame: dashFrame,
     fps,
     config: { damping: 200 },
   });
 
+  const state: DashboardSnapshot = getDashboardState(dashFrame, fps);
+
   return (
     <div style={{ opacity: entrance, marginTop: 8, fontSize: 12, lineHeight: 1.5, width: "100%", overflow: "hidden" }}>
-      <HeaderBar now="3:42:18 PM" />
+      <HeaderBar clockTime={state.clockTime} />
       <HRule />
-      <AgentsPanel />
+      <AgentsPanel agents={state.agents} dashFrame={dashFrame} fps={fps} />
       <HRule />
       <div style={{ display: "flex", width: "100%" }}>
-        <MailPanel />
-        <MergeQueuePanel />
+        <MailPanel mail={state.mail} />
+        <MergeQueuePanel merges={state.merges} />
       </div>
     </div>
   );
