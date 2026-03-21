@@ -75,7 +75,16 @@ export const DASH_MW_WORKING = 80; // middleware starts working
 export const DASH_CFG_WORKING = 110; // config starts working
 export const DASH_MAIL_1 = 130; // first inter-agent mail
 export const DASH_MAIL_2 = 180; // second mail
-export const DASH_MAIL_3 = 230; // third mail (reply)
+
+// Broadcast prompt — user messages agents mid-build from CLI
+export const BROADCAST_PROMPT_TEXT =
+  "message our team and ask if they remember when this required six engineers and a project manager named Doug";
+export const BROADCAST_PROMPT_START = FLEETGO_BACKGROUND + 200; // absolute frame
+export const BROADCAST_PROMPT_SUBMIT = BROADCAST_PROMPT_START + 60;
+export const BROADCAST_RESPONSE_START = BROADCAST_PROMPT_SUBMIT + 15;
+export const DASH_BROADCAST = 209; // broadcast appears in dashboard mail (~0.5s after CLI response)
+
+export const DASH_MAIL_3 = 240; // third mail (reply)
 export const DASH_MAIL_4 = 285; // middleware announces submitting for review
 export const DASH_MW_REVIEW = 300; // middleware enters review
 export const DASH_MW_DONE = 360; // middleware done + PASS

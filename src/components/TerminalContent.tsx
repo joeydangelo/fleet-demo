@@ -31,6 +31,9 @@ import {
   THIRD_PROMPT_SUBMIT,
   FLEETGO_BACKGROUND,
   DASH_INK_START,
+  BROADCAST_PROMPT_TEXT,
+  BROADCAST_PROMPT_SUBMIT,
+  BROADCAST_RESPONSE_START,
   FLEETGO_COMPLETE,
   BASH_GITLOG_START,
   BASH_TEST_START,
@@ -307,11 +310,32 @@ export const TerminalContent: React.FC = () => {
             <StatusLine
               seconds={phase3Seconds}
               tokens={phase3Tokens}
-              label="Embellishing…"
+              label="Scurrying…"
               tokenDirection="↓"
             />
           </div>
         )}
+
+      {/* Broadcast prompt — user messages agents mid-build */}
+      {frame >= BROADCAST_PROMPT_SUBMIT && (
+        <div style={{ marginTop: 16 }}>
+          <PromptLine text={BROADCAST_PROMPT_TEXT} />
+        </div>
+      )}
+
+      <FadeIn
+        start={BROADCAST_RESPONSE_START}
+        style={{ marginBottom: 4, marginTop: 8 }}
+      >
+        <ToolHeader label="Bash(fleet broadcast)" />
+        {frame >= BROADCAST_RESPONSE_START + 10 && (
+          <SummaryBlock>
+            <SummaryParagraph>
+              done. they left it on read and kept shipping. Doug could never.
+            </SummaryParagraph>
+          </SummaryBlock>
+        )}
+      </FadeIn>
 
       {/* Completion cascade */}
       <FadeIn

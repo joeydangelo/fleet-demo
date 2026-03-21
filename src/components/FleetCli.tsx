@@ -12,6 +12,9 @@ import {
   THIRD_PROMPT_TEXT,
   THIRD_PROMPT_START,
   THIRD_PROMPT_SUBMIT,
+  BROADCAST_PROMPT_TEXT,
+  BROADCAST_PROMPT_START,
+  BROADCAST_PROMPT_SUBMIT,
   FLEETGO_BACKGROUND,
   BG_COMPLETE,
 } from "../constants/timing";
@@ -29,11 +32,12 @@ const INPUT_TEXT_STYLE: React.CSSProperties = {
   wordBreak: "break-word",
 };
 
-type PromptState = "initial" | "first" | "second" | "third";
+type PromptState = "initial" | "first" | "second" | "third" | "broadcast";
 
 function getPromptState(
   frame: number,
 ): PromptState {
+  if (frame >= BROADCAST_PROMPT_START && frame < BROADCAST_PROMPT_SUBMIT) return "broadcast";
   if (frame >= THIRD_PROMPT_START && frame < THIRD_PROMPT_SUBMIT) return "third";
   if (frame >= SECOND_PROMPT_START && frame < SECOND_PROMPT_SUBMIT) return "second";
   if (frame >= PROMPT_START && frame < SUBMIT_FRAME) return "first";
@@ -44,6 +48,7 @@ const PROMPT_TEXTS: Record<Exclude<PromptState, "initial">, string> = {
   first: PROMPT_TEXT,
   second: SECOND_PROMPT_TEXT,
   third: THIRD_PROMPT_TEXT,
+  broadcast: BROADCAST_PROMPT_TEXT,
 };
 
 function TerminalInput({ state }: { state: PromptState }): React.ReactElement {

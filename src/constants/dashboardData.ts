@@ -10,6 +10,7 @@ import {
   DASH_CFG_WORKING,
   DASH_MAIL_1,
   DASH_MAIL_2,
+  DASH_BROADCAST,
   DASH_MAIL_3,
   DASH_MW_REVIEW,
   DASH_MAIL_4,
@@ -237,6 +238,7 @@ function resolveVerdicts(f: number): { mw: Verdict; cfg: Verdict } {
 const MAIL_DEFS: { frame: number; prefix: string; message: string }[] = [
   { frame: DASH_MAIL_1, prefix: "[middleware → config]", message: "I'll own the Redis layer — avoid importing redis directly" },
   { frame: DASH_MAIL_2, prefix: "[config → middleware]", message: "Got it. I'll define limits in route config and read from your exports" },
+  { frame: DASH_BROADCAST, prefix: "[orchestrator]", message: "remember when this required six engineers and a PM named Doug?" },
   { frame: DASH_MAIL_3, prefix: "[middleware → config]", message: "Exported RateLimiter class + checkLimit() — ready when you are" },
   { frame: DASH_MAIL_4, prefix: "[middleware]", message: "Submitting for review — sliding window + Redis done" },
   { frame: DASH_MAIL_5, prefix: "[config]", message: "Submitting for review — route configs + headers wired" },
@@ -254,7 +256,7 @@ function buildMail(f: number): MailEntry[] {
       });
     }
   }
-  return entries.slice(-5);
+  return entries.slice(-6);
 }
 
 /** Fake relative time that ticks at 15x speed. */
