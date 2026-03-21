@@ -21,6 +21,7 @@ import {
   BASH_TEST_START,
   FINAL_MESSAGE_START,
 } from "../../constants/timing";
+import { SPRING_LAYOUT } from "../../constants/theme";
 
 const CLAMP_BOTH = {
   extrapolateLeft: "clamp" as const,
@@ -107,7 +108,7 @@ export function useTerminalScroll(): number {
       const progress = spring({
         frame: localFrame,
         fps,
-        config: { damping: 200 },
+        config: SPRING_LAYOUT,
       });
       // Each spring replaces the previous resting position
       result = from + (to - from) * progress;

@@ -148,8 +148,6 @@ function AgentHeaderRow(): React.ReactElement {
 
 // ── Spring configs ────────────────────────────────────────────────────
 
-const SPRING_SMOOTH = { damping: 200 };
-
 /** Status icon + text: smooth crossfade on status change. */
 function AgentRowView({
   agent,
@@ -252,7 +250,7 @@ function MailPanel({
         <div style={{ color: TERM_DIM }}>No messages</div>
       )}
       {mail.map((entry, i) => (
-        <MailRowView key={i} entry={entry} dashFrame={dashFrame} fps={fps} />
+        <MailRowView key={entry.appearFrame} entry={entry} dashFrame={dashFrame} fps={fps} />
       ))}
     </div>
   );
@@ -271,7 +269,7 @@ function MailRowView({
   const entrance = spring({
     frame: age,
     fps,
-    config: SPRING_SMOOTH,
+    config: SPRING_LAYOUT,
   });
   const slideX = interpolate(entrance, [0, 1], [-20, 0]);
 
@@ -332,7 +330,7 @@ function MergeRowView({
   const rowEntrance = spring({
     frame: rowAge,
     fps,
-    config: SPRING_SMOOTH,
+    config: SPRING_LAYOUT,
   });
   const slideX = interpolate(rowEntrance, [0, 1], [-20, 0]);
 
@@ -374,7 +372,7 @@ function DashboardView({
   const entrance = spring({
     frame: dashFrame,
     fps,
-    config: { damping: 200 },
+    config: SPRING_LAYOUT,
   });
 
   const state: DashboardSnapshot = getDashboardState(dashFrame, fps);
@@ -451,7 +449,6 @@ export const MacTerminal: React.FC = () => {
   });
 
   const translateX = interpolate(entrance, [0, 1], [60, 0]);
-  const opacity = entrance;
 
   return (
     <div
@@ -464,7 +461,7 @@ export const MacTerminal: React.FC = () => {
         overflow: "hidden",
         boxShadow:
           "0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 12px 24px -8px rgba(0, 0, 0, 0.25)",
-        opacity,
+        opacity: entrance,
         transform: `translateX(${translateX}px)`,
       }}
     >
@@ -492,7 +489,6 @@ export const MacTerminal: React.FC = () => {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            gap: 0,
           }}
         >
           <FolderIcon />

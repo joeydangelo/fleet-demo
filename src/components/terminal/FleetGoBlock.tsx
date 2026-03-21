@@ -1,17 +1,11 @@
 import React from "react";
-import { useCurrentFrame, interpolate, Easing } from "remotion";
+import { useCurrentFrame, interpolate } from "remotion";
 import {
   BASH_FLEETGO_START,
   FLEETGO_BACKGROUND,
 } from "../../constants/timing";
-import { DIM, GRAY, TEXT } from "../../constants/theme";
-import { FadeIn, ToolHeader, SubLine } from "../shared";
-
-const FADE_CLAMP = {
-  extrapolateLeft: "clamp" as const,
-  extrapolateRight: "clamp" as const,
-  easing: Easing.out(Easing.ease),
-};
+import { DIM, GRAY, TEXT, TOOL_INDENT } from "../../constants/theme";
+import { FadeIn, FADE_CLAMP, ToolHeader, SubLine } from "../shared";
 
 export const FleetGoBlock: React.FC = () => {
   const frame = useCurrentFrame();
@@ -26,7 +20,7 @@ export const FleetGoBlock: React.FC = () => {
       {frame < FLEETGO_BACKGROUND && (
         <div
           style={{
-            paddingLeft: 22,
+            paddingLeft: TOOL_INDENT,
             fontSize: 12,
             lineHeight: 1.7,
             marginTop: 4,

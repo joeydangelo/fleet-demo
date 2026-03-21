@@ -20,6 +20,8 @@ import {
   getHoveredOption,
 } from "./cursorPaths";
 
+const SELECTION_THRESHOLD = 0.82;
+
 export const AskUserQuestion: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -59,7 +61,7 @@ export const AskUserQuestion: React.FC = () => {
     }
   }
 
-  const isSelected = phaseProgress > 0.82;
+  const isSelected = phaseProgress > SELECTION_THRESHOLD;
   const hoveredOption = getHoveredOption(cursorY, phase);
 
   // Expand/collapse animation using spring for natural easing
@@ -86,11 +88,9 @@ export const AskUserQuestion: React.FC = () => {
     color:
       isSelected && hoveredOption === optIndex
         ? AUQ_SELECTED
-        : hoveredOption === optIndex
+        : (hoveredOption === optIndex || isDefaultVisible)
           ? AUQ_TEXT
-          : isDefaultVisible
-            ? AUQ_TEXT
-            : AUQ_DIM,
+          : AUQ_DIM,
     fontWeight:
       hoveredOption === optIndex || (isSelected && hoveredOption === optIndex)
         ? 600
@@ -141,7 +141,7 @@ export const AskUserQuestion: React.FC = () => {
             <span
               key={tab}
               style={{
-                color: isActive ? AUQ_TEXT : isDone ? AUQ_TEXT : AUQ_DIM,
+                color: (isActive || isDone) ? AUQ_TEXT : AUQ_DIM,
                 border: isActive
                   ? `1px solid ${AUQ_TAB_ACTIVE_BORDER}`
                   : "1px solid transparent",

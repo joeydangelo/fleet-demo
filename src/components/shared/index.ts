@@ -1,4 +1,4 @@
-export { FadeIn } from "./FadeIn";
+export { FadeIn, FADE_CLAMP } from "./FadeIn";
 export { StatusLine } from "./StatusLine";
 export { Dot, BlinkingDot, CollapsedOutput, SubLine } from "./TerminalParts";
 export { TrafficLights } from "./TrafficLights";

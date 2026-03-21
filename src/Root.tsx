@@ -1,13 +1,13 @@
 import "./index.css";
 import { Composition } from "remotion";
-import { MyComposition } from "./Composition";
+import { FleetDemoComposition } from "./Composition";
 
 export const RemotionRoot: React.FC = () => {
   return (
     <>
       <Composition
-        id="MyComp"
-        component={MyComposition}
+        id="FleetDemo"
+        component={FleetDemoComposition}
         durationInFrames={2010}
         fps={30}
         width={1280}

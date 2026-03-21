@@ -1,7 +1,7 @@
 // --- Timing constants (in frames at 30fps) ---
 export const PROMPT_START = 15;
 export const PROMPT_TEXT = "Add rate limiting across all API endpoints";
-export const PROMPT_END = PROMPT_START + 3;
+const PROMPT_END = PROMPT_START + 3;
 export const SUBMIT_FRAME = PROMPT_END + 20;
 
 // Phase timings (after submit)
@@ -93,4 +93,4 @@ export const DASH_MAIL_5 = 440; // config announces submitting for review
 export const DASH_CFG_REVIEW = 470; // config enters review
 export const DASH_CFG_DONE = 520; // config done + PASS
 export const DASH_MERGE_CFG = 550; // config merged
-export const DASH_ALL_MERGED = 550; // both merged
+export const DASH_ALL_MERGED = DASH_MERGE_CFG; // both merged

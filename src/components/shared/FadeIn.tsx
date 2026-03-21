@@ -1,7 +1,7 @@
 import React from "react";
 import { useCurrentFrame, interpolate, Easing } from "remotion";
 
-const FADE_CLAMP = {
+export const FADE_CLAMP = {
   extrapolateLeft: "clamp" as const,
   extrapolateRight: "clamp" as const,
   easing: Easing.out(Easing.ease),

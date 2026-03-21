@@ -6,7 +6,7 @@ import {
   YAML_WRITE_START,
   TIMER2_START,
 } from "../constants/timing";
-import { MONO, SPRING_LAYOUT } from "../constants/theme";
+import { MONO, SYSTEM_FONT, SPRING_LAYOUT } from "../constants/theme";
 import {
   SPEC_FILENAME,
   SPEC_LINES,
@@ -33,7 +33,6 @@ import {
   YAML_STRING_COLOR,
   YAML_PIPE_COLOR,
   specFontWeight,
-  SYSTEM_FONT,
   STATUS_FONT,
 } from "./vscode/colors";
 import { TrafficLights } from "./shared";
@@ -81,7 +80,6 @@ export const VscodeEditor: React.FC = () => {
   });
 
   const translateX = interpolate(entrance, [0, 1], [60, 0]);
-  const opacity = entrance;
 
   const yamlSwapStart = YAML_WRITE_START + YAML_SWAP_DELAY;
   const showingYaml = frame >= yamlSwapStart;
@@ -115,7 +113,7 @@ export const VscodeEditor: React.FC = () => {
         overflow: "hidden",
         boxShadow:
           "0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 12px 24px -8px rgba(0, 0, 0, 0.15)",
-        opacity,
+        opacity: entrance,
         transform: `translateX(${translateX}px)`,
       }}
     >

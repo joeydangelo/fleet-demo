@@ -43,7 +43,7 @@ export const StatusLine: React.FC<{
   seconds: string;
   tokens: string;
   label?: string;
-  tokenDirection?: string;
+  tokenDirection?: "↑" | "↓";
 }> = ({ seconds, tokens, label = "Scurrying\u2026", tokenDirection = "\u2191" }) => (
   <div
     style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 6 }}

@@ -10,7 +10,7 @@ import {
 } from "./constants/timing";
 import { SPRING_LAYOUT } from "./constants/theme";
 
-export const MyComposition: React.FC = () => {
+export const FleetDemoComposition: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
@@ -41,7 +41,7 @@ export const MyComposition: React.FC = () => {
   const terminalScale = interpolate(layoutProgress, [0, 1], [1, 0.82]);
 
   // Editor: visible after spec start, slides out during restore
-  const editorVisible = frame >= SPEC_EDITOR_START && restore < 1;
+  const editorVisible = frame >= SPEC_EDITOR_START && restore < 0.99;
   const editorSlideOut = interpolate(restore, [0, 1], [0, 120]);
   const editorOpacity = interpolate(restore, [0, 0.6], [1, 0], {
     extrapolateRight: "clamp",

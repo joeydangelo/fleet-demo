@@ -1,8 +1,6 @@
 import { type SpecLineStyle } from "../../constants/specContent";
 import { type YamlLineStyle } from "../../constants/yamlContent";
 
-export { SYSTEM_FONT } from "../../constants/theme";
-
 export const SPEC_COLORS: Record<SpecLineStyle, string> = {
   frontmatter: "#ce9178",
   h1: "#569cd6",

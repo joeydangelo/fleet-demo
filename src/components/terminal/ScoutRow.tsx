@@ -5,7 +5,7 @@ import { DIM, GRAY, TEXT } from "../../constants/theme";
 type ScoutData = {
   name: string;
   toolUses: number;
-  tokens: string;
+  tokens: number;
   doneFrame: number;
 };
 
@@ -26,18 +26,17 @@ export const ScoutRow: React.FC<ScoutRowProps> = ({
   const isDone = frame >= doneFrame;
   const connector = isLast ? "\u2514\u2500" : "\u251c\u2500";
 
-  const finalTokens = parseFloat(tokens);
   const duration = doneFrame - startFrame;
 
   let displayToolUses = toolUses;
-  let displayTokens = tokens;
+  let displayTokens = `${tokens.toFixed(1)}k`;
 
   if (!isDone) {
     const third = duration / 3;
     const elapsed = Math.max(0, frame - startFrame);
     const ratio = elapsed < third ? 0.4 : 0.7;
     displayToolUses = Math.round(toolUses * ratio);
-    displayTokens = `${(finalTokens * ratio).toFixed(1)}k`;
+    displayTokens = `${(tokens * ratio).toFixed(1)}k`;
   }
 
   return (

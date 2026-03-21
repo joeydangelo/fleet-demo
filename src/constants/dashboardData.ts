@@ -103,7 +103,7 @@ export function getStatusStyle(status: AgentDisplayStatus): StatusStyle {
   return STATUS_STYLES[status];
 }
 
-const VERDICT_STYLES: Record<string, { label: string; color: string }> = {
+const VERDICT_STYLES: Record<NonNullable<Verdict>, { label: string; color: string }> = {
   pass: { label: "PASS", color: ANSI_GREEN },
   fail: { label: "FAIL", color: ANSI_RED },
   skip: { label: "SKIP", color: ANSI_GRAY },

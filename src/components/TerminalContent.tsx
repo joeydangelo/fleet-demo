@@ -80,9 +80,9 @@ const PHASE3_SEGMENTS = [
 ];
 
 const SCOUT_DATA: (ScoutData & { isLast: boolean })[] = [
-  { name: "Scout API route handlers and middleware", toolUses: 34, tokens: "71.8k", doneFrame: SCOUT1_DONE, isLast: false },
-  { name: "Scout existing auth and request pipeline", toolUses: 42, tokens: "82.2k", doneFrame: SCOUT2_DONE, isLast: false },
-  { name: "Scout Redis config and caching layer", toolUses: 35, tokens: "77.3k", doneFrame: SCOUT3_DONE, isLast: true },
+  { name: "Scout API route handlers and middleware", toolUses: 34, tokens: 71.8, doneFrame: SCOUT1_DONE, isLast: false },
+  { name: "Scout existing auth and request pipeline", toolUses: 42, tokens: 82.2, doneFrame: SCOUT2_DONE, isLast: false },
+  { name: "Scout Redis config and caching layer", toolUses: 35, tokens: 77.3, doneFrame: SCOUT3_DONE, isLast: true },
 ];
 
 export const TerminalContent: React.FC = () => {
@@ -107,7 +107,7 @@ export const TerminalContent: React.FC = () => {
   if (!submitted) return null;
 
   const scoutsDoneCount = SCOUT_DATA.filter((s) => frame >= s.doneFrame).length;
-  const allScoutsDone = scoutsDoneCount === 3;
+  const allScoutsDone = scoutsDoneCount === SCOUT_DATA.length;
 
   return (
     <div style={{ transform: `translateY(-${scrollOffset}px)` }}>
