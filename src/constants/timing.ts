@@ -92,3 +92,6 @@ export const DASH_ALL_MERGED = DASH_MERGE_CFG; // both merged
 
 // Outro — everything scales down and disappears
 export const OUTRO_START = BG_COMPLETE + 20;
+
+// Total composition duration — outro spring + buffer for full settle
+export const TOTAL_DURATION = OUTRO_START + 52;

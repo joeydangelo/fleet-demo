@@ -43,7 +43,7 @@ const SCOUT_DATA: (ScoutData & { isLast: boolean })[] = [
   { name: "Scout Redis config and caching layer", toolUses: 35, tokens: 77.3, doneFrame: SCOUT3_DONE, isLast: true },
 ];
 
-export function Phase1Content({
+export function ScoutPhaseContent({
   runningSeconds,
   runningTokens,
 }: {

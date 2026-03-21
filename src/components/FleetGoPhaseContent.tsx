@@ -24,7 +24,7 @@ import {
 } from "./shared";
 import { PromptLine, FleetGoBlock } from "./terminal";
 
-export function Phase3Content({
+export function FleetGoPhaseContent({
   phase3Seconds,
   phase3Tokens,
 }: {

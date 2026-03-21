@@ -21,7 +21,7 @@ import {
 } from "./shared";
 import { ToolStep, PromptLine } from "./terminal";
 
-export function Phase2Content({
+export function SpecPhaseContent({
   phase2Seconds,
   phase2Tokens,
 }: {

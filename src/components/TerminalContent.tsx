@@ -14,9 +14,9 @@ import {
   useTokenCounter,
   useTerminalScroll,
 } from "./terminal";
-import { Phase1Content } from "./Phase1Content";
-import { Phase2Content } from "./Phase2Content";
-import { Phase3Content } from "./Phase3Content";
+import { ScoutPhaseContent } from "./ScoutPhaseContent";
+import { SpecPhaseContent } from "./SpecPhaseContent";
+import { FleetGoPhaseContent } from "./FleetGoPhaseContent";
 
 // Static token rate segments
 const PHASE1_SEGMENTS = [
@@ -56,9 +56,9 @@ export const TerminalContent: React.FC = () => {
 
   return (
     <div style={{ transform: `translateY(-${scrollOffset}px)` }}>
-      <Phase1Content runningSeconds={runningSeconds} runningTokens={runningTokens} />
-      <Phase2Content phase2Seconds={phase2Seconds} phase2Tokens={phase2Tokens} />
-      <Phase3Content phase3Seconds={phase3Seconds} phase3Tokens={phase3Tokens} />
+      <ScoutPhaseContent runningSeconds={runningSeconds} runningTokens={runningTokens} />
+      <SpecPhaseContent phase2Seconds={phase2Seconds} phase2Tokens={phase2Tokens} />
+      <FleetGoPhaseContent phase3Seconds={phase3Seconds} phase3Tokens={phase3Tokens} />
     </div>
   );
 };

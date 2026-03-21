@@ -24,7 +24,7 @@ import {
 } from "./timing";
 import {
   DASHBOARD_TARGET,
-} from "./dashboardTypes";
+} from "../types/dashboardTypes";
 import type {
   AgentDisplayStatus,
   Verdict,
@@ -32,7 +32,7 @@ import type {
   MailEntry,
   MergeEntry,
   DashboardSnapshot,
-} from "./dashboardTypes";
+} from "../types/dashboardTypes";
 
 // Re-export everything from dashboardTypes so existing consumers work unchanged
 export {
@@ -47,7 +47,7 @@ export {
   COL_REVIEW,
   COL_DURATION,
   COL_TMUX,
-} from "./dashboardTypes";
+} from "../types/dashboardTypes";
 export type {
   AgentDisplayStatus,
   Verdict,
@@ -57,7 +57,7 @@ export type {
   MergeEntry,
   DashboardSnapshot,
   StatusStyle,
-} from "./dashboardTypes";
+} from "../types/dashboardTypes";
 
 // ── Duration formatting ──────────────────────────────────────────────
 
