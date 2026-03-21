@@ -4,13 +4,17 @@ import { FleetCli } from "./components/FleetCli";
 import { MacTerminal } from "./components/MacTerminal";
 import { VscodeEditor } from "./components/VscodeEditor";
 import {
+  SUBMIT_FRAME,
   SCOUTS_START,
   TERMINAL_REPOSITION_START,
   SPEC_EDITOR_START,
   ASK_USER_START,
   ASK_USER_END,
+  SECOND_PROMPT_SUBMIT,
   EDITOR_EXIT_START,
+  THIRD_PROMPT_SUBMIT,
   FLEETGO_BACKGROUND,
+  BROADCAST_PROMPT_SUBMIT,
   FLEETGO_COMPLETE,
   FINAL_MESSAGE_START,
   OUTRO_START,
@@ -151,9 +155,59 @@ export const FleetDemoComposition: React.FC = () => {
         }}
       />
 
+      {/* SFX: Pop on each prompt submit */}
+      <Sequence from={SUBMIT_FRAME} layout="none">
+        <Audio src={staticFile("floraphonic-happy-pop-3-185288.mp3")} volume={0.4} />
+      </Sequence>
+      <Sequence from={SECOND_PROMPT_SUBMIT} layout="none">
+        <Audio src={staticFile("floraphonic-happy-pop-3-185288.mp3")} volume={0.4} />
+      </Sequence>
+      <Sequence from={THIRD_PROMPT_SUBMIT} layout="none">
+        <Audio src={staticFile("floraphonic-happy-pop-3-185288.mp3")} volume={0.4} />
+      </Sequence>
+      <Sequence from={BROADCAST_PROMPT_SUBMIT} layout="none">
+        <Audio src={staticFile("floraphonic-happy-pop-3-185288.mp3")} volume={0.4} />
+      </Sequence>
+
       {/* SFX: Pop when scouts launch */}
       <Sequence from={SCOUTS_START} layout="none">
         <Audio src={staticFile("sfx-pop.mp3")} volume={0.4} />
+      </Sequence>
+
+      {/* SFX: Click on each AskUserQuestion selection */}
+      <Sequence from={ASK_USER_START + 53} layout="none">
+        <Audio src={staticFile("yusuf_sfx-futuristic-ui-positive-selection-502158.mp3")} volume={0.4} />
+      </Sequence>
+      <Sequence from={ASK_USER_START + 122} layout="none">
+        <Audio src={staticFile("yusuf_sfx-futuristic-ui-positive-selection-502158.mp3")} volume={0.4} />
+      </Sequence>
+      <Sequence from={ASK_USER_START + 188} layout="none">
+        <Audio src={staticFile("yusuf_sfx-futuristic-ui-positive-selection-502158.mp3")} volume={0.4} />
+      </Sequence>
+
+      {/* SFX: Swoosh when editor slides in */}
+      <Sequence from={SPEC_EDITOR_START} layout="none">
+        <Audio src={staticFile("whoosh.wav")} volume={0.5} />
+      </Sequence>
+
+      {/* SFX: Whoosh when MacTerminal slides in */}
+      <Sequence from={FLEETGO_BACKGROUND} layout="none">
+        <Audio src={staticFile("whoosh.wav")} volume={0.5} />
+      </Sequence>
+
+      {/* SFX: Whip when editor slides out */}
+      <Sequence from={EDITOR_EXIT_START} layout="none">
+        <Audio src={staticFile("whip.wav")} volume={0.5} />
+      </Sequence>
+
+      {/* SFX: Whip when outro scales down */}
+      <Sequence from={OUTRO_START} layout="none">
+        <Audio src={staticFile("whip.wav")} volume={0.5} />
+      </Sequence>
+
+      {/* SFX: Chime when fleet go completes */}
+      <Sequence from={FLEETGO_COMPLETE} layout="none">
+        <Audio src={staticFile("yusuf_sfx-kids-game-victory-502088.mp3")} volume={0.5} />
       </Sequence>
     <AbsoluteFill
       style={{
