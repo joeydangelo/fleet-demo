@@ -2,22 +2,28 @@ import React from "react";
 import { useCurrentFrame, useVideoConfig } from "remotion";
 import { DIM, ORANGE } from "../../constants/theme";
 
-const SPINNER_CHARS = ["\u00b7", "\u2722", "\u2733", "\u2736", "\u273b", "\u273d"];
-const SPINNER_HOLDS = [2, 1, 1, 1, 1, 2];
+const SPINNER_FRAMES = [
+  { char: "\u00b7", hold: 2 },
+  { char: "\u2722", hold: 1 },
+  { char: "\u2733", hold: 1 },
+  { char: "\u2736", hold: 1 },
+  { char: "\u273b", hold: 1 },
+  { char: "\u273d", hold: 2 },
+];
 
 const SpinningDot: React.FC<{ color: string }> = ({ color }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const baseFramesPerChar = Math.round(fps * 0.12);
-  const totalCycleFrames = SPINNER_HOLDS.reduce(
-    (sum, hold) => sum + baseFramesPerChar + hold,
+  const totalCycleFrames = SPINNER_FRAMES.reduce(
+    (sum, { hold }) => sum + baseFramesPerChar + hold,
     0,
   );
   const cycleFrame = frame % totalCycleFrames;
   let accumulated = 0;
   let charIndex = 0;
-  for (let i = 0; i < SPINNER_CHARS.length; i++) {
-    accumulated += baseFramesPerChar + SPINNER_HOLDS[i];
+  for (let i = 0; i < SPINNER_FRAMES.length; i++) {
+    accumulated += baseFramesPerChar + SPINNER_FRAMES[i].hold;
     if (cycleFrame < accumulated) {
       charIndex = i;
       break;
@@ -34,7 +40,7 @@ const SpinningDot: React.FC<{ color: string }> = ({ color }) => {
         textAlign: "center",
       }}
     >
-      {SPINNER_CHARS[charIndex]}
+      {SPINNER_FRAMES[charIndex].char}
     </span>
   );
 };

@@ -2,22 +2,24 @@ import React from "react";
 import { useCurrentFrame, useVideoConfig, interpolate, spring } from "remotion";
 import {
   PROMPT_START,
-  PROMPT_TEXT,
   SUBMIT_FRAME,
   ASK_USER_START,
   ASK_USER_END,
-  SECOND_PROMPT_TEXT,
   SECOND_PROMPT_START,
   SECOND_PROMPT_SUBMIT,
-  THIRD_PROMPT_TEXT,
   THIRD_PROMPT_START,
   THIRD_PROMPT_SUBMIT,
-  BROADCAST_PROMPT_TEXT,
   BROADCAST_PROMPT_START,
   BROADCAST_PROMPT_SUBMIT,
   FLEETGO_BACKGROUND,
   BG_COMPLETE,
 } from "../constants/timing";
+import {
+  PROMPT_TEXT,
+  SECOND_PROMPT_TEXT,
+  THIRD_PROMPT_TEXT,
+  BROADCAST_PROMPT_TEXT,
+} from "../constants/prompts";
 import { MONO, TEXT, GRAY, SYSTEM_FONT, SPRING_BOUNCE } from "../constants/theme";
 import { TrafficLights } from "./shared";
 import { TerminalContent } from "./TerminalContent";

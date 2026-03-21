@@ -1,6 +1,5 @@
 // --- Timing constants (in frames at 30fps) ---
 export const PROMPT_START = 15;
-export const PROMPT_TEXT = "Add rate limiting across all API endpoints";
 const PROMPT_END = PROMPT_START + 3;
 export const SUBMIT_FRAME = PROMPT_END + 20;
 
@@ -34,7 +33,6 @@ export const SPEC_SUMMARY_START = SPEC_EDITOR_START + 20;
 export const TIMER1_START = SPEC_SUMMARY_START + 40;
 
 // User approves shortly after spec finishes scrolling
-export const SECOND_PROMPT_TEXT = "looks good, carry on";
 export const SECOND_PROMPT_START = TIMER1_START + 15;
 export const SECOND_PROMPT_SUBMIT = SECOND_PROMPT_START + 35;
 
@@ -47,7 +45,6 @@ export const FINAL_SUMMARY_START = YAML_WRITE_START + 15;
 export const TIMER2_START = FINAL_SUMMARY_START + 55;
 
 // Phase 3: user kicks off fleet go
-export const THIRD_PROMPT_TEXT = "yes, kick it off";
 export const THIRD_PROMPT_START = TIMER2_START + 15;
 export const THIRD_PROMPT_SUBMIT = THIRD_PROMPT_START + 25;
 
@@ -77,8 +74,6 @@ export const DASH_MAIL_1 = 130; // first inter-agent mail
 export const DASH_MAIL_2 = 180; // second mail
 
 // Broadcast prompt — user messages agents mid-build from CLI
-export const BROADCAST_PROMPT_TEXT =
-  "message our team and ask if they remember when this required six engineers and a project manager named Doug";
 export const BROADCAST_PROMPT_START = FLEETGO_BACKGROUND + 200; // absolute frame
 export const BROADCAST_PROMPT_SUBMIT = BROADCAST_PROMPT_START + 60;
 export const BROADCAST_RESPONSE_START = BROADCAST_PROMPT_SUBMIT + 15;

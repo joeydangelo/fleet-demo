@@ -22,123 +22,42 @@ import {
   DASH_MERGE_CFG,
   DASH_ALL_MERGED,
 } from "./timing";
+import {
+  DASHBOARD_TARGET,
+} from "./dashboardTypes";
+import type {
+  AgentDisplayStatus,
+  Verdict,
+  AgentRow,
+  MailEntry,
+  MergeEntry,
+  DashboardSnapshot,
+} from "./dashboardTypes";
 
-// ── Types ────────────────────────────────────────────────────────────
-
-export type AgentDisplayStatus =
-  | "pending"
-  | "booting"
-  | "working"
-  | "stalled"
-  | "zombie"
-  | "in review"
-  | "done";
-
-export type Verdict = "pass" | "fail" | "skip" | null;
-
-export type MergeStatus = "merged" | "conflict" | "skipped" | "pending";
-
-export interface AgentRow {
-  name: string;
-  status: AgentDisplayStatus;
-  verdict: Verdict;
-  duration: string;
-  tmuxAlive: boolean;
-  /** Frame at which the current status began (for transition animations). */
-  statusStartFrame: number;
-  /** Frame at which the verdict appeared (0 if no verdict yet). */
-  verdictFrame: number;
-}
-
-export interface MailEntry {
-  prefix: string; // e.g. "[middleware → config]" or "[middleware]"
-  message: string;
-  relativeTime: string;
-  /** Frame at which this mail appeared (for entrance animation). */
-  appearFrame: number;
-}
-
-export interface MergeEntry {
-  taskName: string;
-  status: MergeStatus;
-  target: string;
-  /** Frame at which this entry appeared in the queue. */
-  appearFrame: number;
-  /** Frame at which the status last changed (for badge crossfade). */
-  statusChangeFrame: number;
-}
-
-export interface DashboardSnapshot {
-  agents: AgentRow[];
-  mail: MailEntry[];
-  merges: MergeEntry[];
-  clockTime: string;
-}
-
-// ── Status display mapping ───────────────────────────────────────────
-
-export interface StatusStyle {
-  icon: string;
-  color: string;
-}
-
-// ANSI terminal colors matching macOS Terminal.app dark profile
-const ANSI_GREEN = "#55b45a";
-const ANSI_YELLOW = "#c6a827";
-const ANSI_RED = "#d44e40";
-const ANSI_CYAN = "#4fb4d8";
-const ANSI_GRAY = "#808080";
-
-const STATUS_STYLES: Record<AgentDisplayStatus, StatusStyle> = {
-  pending: { icon: "◌", color: ANSI_GRAY },
-  booting: { icon: "◌", color: ANSI_GRAY },
-  working: { icon: "●", color: ANSI_GREEN },
-  stalled: { icon: "●", color: ANSI_YELLOW },
-  zombie: { icon: "●", color: ANSI_RED },
-  "in review": { icon: "⟳", color: ANSI_CYAN },
-  done: { icon: "✓", color: ANSI_GREEN },
-};
-
-export function getStatusStyle(status: AgentDisplayStatus): StatusStyle {
-  return STATUS_STYLES[status];
-}
-
-const VERDICT_STYLES: Record<NonNullable<Verdict>, { label: string; color: string }> = {
-  pass: { label: "PASS", color: ANSI_GREEN },
-  fail: { label: "FAIL", color: ANSI_RED },
-  skip: { label: "SKIP", color: ANSI_GRAY },
-};
-
-export function getVerdictStyle(verdict: Verdict): { label: string; color: string } | null {
-  if (verdict === null) return null;
-  return VERDICT_STYLES[verdict] ?? null;
-}
-
-const MERGE_BADGE_STYLES: Record<MergeStatus, { label: string; color: string }> = {
-  merged: { label: "merged", color: ANSI_GREEN },
-  conflict: { label: "conflict", color: ANSI_RED },
-  skipped: { label: "skipped", color: ANSI_GRAY },
-  pending: { label: "pending", color: ANSI_YELLOW },
-};
-
-export function getMergeBadge(status: MergeStatus): { label: string; color: string } {
-  return MERGE_BADGE_STYLES[status];
-}
-
-// ── Column layout widths (character units) ───────────────────────────
-
-export const COL_STATUS_ICON = 4;
-export const COL_NAME = 17;
-export const COL_STATUS = 14;
-export const COL_REVIEW = 9;
-export const COL_DURATION = 11;
-export const COL_TMUX = 4;
-
-// ── Dashboard constants ──────────────────────────────────────────────
-
-export const DASHBOARD_VERSION = "0.1.0";
-export const DASHBOARD_REFRESH_MS = 3000;
-export const DASHBOARD_TARGET = "feat/rate-limiting";
+// Re-export everything from dashboardTypes so existing consumers work unchanged
+export {
+  getStatusStyle,
+  getVerdictStyle,
+  getMergeBadge,
+  DASHBOARD_VERSION,
+  DASHBOARD_REFRESH_MS,
+  COL_STATUS_ICON,
+  COL_NAME,
+  COL_STATUS,
+  COL_REVIEW,
+  COL_DURATION,
+  COL_TMUX,
+} from "./dashboardTypes";
+export type {
+  AgentDisplayStatus,
+  Verdict,
+  MergeStatus,
+  AgentRow,
+  MailEntry,
+  MergeEntry,
+  DashboardSnapshot,
+  StatusStyle,
+} from "./dashboardTypes";
 
 // ── Duration formatting ──────────────────────────────────────────────
 
@@ -199,30 +118,33 @@ interface AgentState {
   statusStartFrame: number;
 }
 
-function resolveAgentState(f: number, agent: "mw" | "cfg"): AgentState {
-  // Ordered transitions: each entry is [frame, status]
-  const transitions: [number, AgentDisplayStatus][] = agent === "mw"
-    ? [
-        [0, "pending"],
-        [DASH_AGENTS_BOOT, "booting"],
-        [DASH_MW_WORKING, "working"],
-        [DASH_MW_REVIEW, "in review"],
-        [DASH_MW_DONE, "done"],
-      ]
-    : [
-        [0, "pending"],
-        [DASH_AGENTS_BOOT, "booting"],
-        [DASH_CFG_WORKING, "working"],
-        [DASH_CFG_REVIEW, "in review"],
-        [DASH_CFG_DONE, "done"],
-      ];
+type Transition = { frame: number; status: AgentDisplayStatus };
 
+// Per-agent frames that differ between middleware and config
+const AGENT_TRANSITIONS: Record<"mw" | "cfg", Transition[]> = {
+  mw: [
+    { frame: 0, status: "pending" },
+    { frame: DASH_AGENTS_BOOT, status: "booting" },
+    { frame: DASH_MW_WORKING, status: "working" },
+    { frame: DASH_MW_REVIEW, status: "in review" },
+    { frame: DASH_MW_DONE, status: "done" },
+  ],
+  cfg: [
+    { frame: 0, status: "pending" },
+    { frame: DASH_AGENTS_BOOT, status: "booting" },
+    { frame: DASH_CFG_WORKING, status: "working" },
+    { frame: DASH_CFG_REVIEW, status: "in review" },
+    { frame: DASH_CFG_DONE, status: "done" },
+  ],
+};
+
+function resolveAgentState(f: number, agent: "mw" | "cfg"): AgentState {
   let status: AgentDisplayStatus = "pending";
   let startFrame = 0;
-  for (const [frame, s] of transitions) {
-    if (f >= frame) {
-      status = s;
-      startFrame = frame;
+  for (const t of AGENT_TRANSITIONS[agent]) {
+    if (f >= t.frame) {
+      status = t.status;
+      startFrame = t.frame;
     }
   }
   return { status, statusStartFrame: startFrame };

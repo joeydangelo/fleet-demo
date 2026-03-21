@@ -66,14 +66,14 @@ const SCROLL_SEGMENTS: ScrollSegment[] = [
 ];
 
 // Post-background: spring-driven for natural motion
-// Each entry: [triggerFrame, delay, fromScroll, toScroll]
-const POST_BG_SPRINGS: [number, number, number, number][] = [
-  [FLEETGO_BACKGROUND, 0, SCROLL_FLEET_GO, SCROLL_FLEET_GO_BG],
-  [BROADCAST_PROMPT_SUBMIT, 0, SCROLL_FLEET_GO_BG, SCROLL_BROADCAST],
-  [FLEETGO_COMPLETE, 12, SCROLL_BROADCAST, SCROLL_COMPLETE],
-  [BASH_GITLOG_START, 10, SCROLL_COMPLETE, SCROLL_GITLOG],
-  [BASH_TEST_START, 10, SCROLL_GITLOG, SCROLL_TESTS],
-  [FINAL_MESSAGE_START, 8, SCROLL_TESTS, SCROLL_FINAL],
+type SpringSegment = { trigger: number; delay: number; from: number; to: number };
+const POST_BG_SPRINGS: SpringSegment[] = [
+  { trigger: FLEETGO_BACKGROUND, delay: 0, from: SCROLL_FLEET_GO, to: SCROLL_FLEET_GO_BG },
+  { trigger: BROADCAST_PROMPT_SUBMIT, delay: 0, from: SCROLL_FLEET_GO_BG, to: SCROLL_BROADCAST },
+  { trigger: FLEETGO_COMPLETE, delay: 12, from: SCROLL_BROADCAST, to: SCROLL_COMPLETE },
+  { trigger: BASH_GITLOG_START, delay: 10, from: SCROLL_COMPLETE, to: SCROLL_GITLOG },
+  { trigger: BASH_TEST_START, delay: 10, from: SCROLL_GITLOG, to: SCROLL_TESTS },
+  { trigger: FINAL_MESSAGE_START, delay: 8, from: SCROLL_TESTS, to: SCROLL_FINAL },
 ];
 
 export function useTerminalScroll(): number {
@@ -102,7 +102,7 @@ export function useTerminalScroll(): number {
     // Post-background: layer springs additively
     // Start at SCROLL_FLEET_GO, then each spring moves from its `from` to `to`
     let result = SCROLL_FLEET_GO;
-    for (const [trigger, delay, from, to] of POST_BG_SPRINGS) {
+    for (const { trigger, delay, from, to } of POST_BG_SPRINGS) {
       const localFrame = frame - (trigger + delay);
       if (localFrame < 0) break;
       const progress = spring({
