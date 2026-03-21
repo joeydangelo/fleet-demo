@@ -1,12 +1,18 @@
-import { AbsoluteFill, useCurrentFrame, useVideoConfig, spring, interpolate } from "remotion";
+import { AbsoluteFill, Sequence, useCurrentFrame, useVideoConfig, spring, interpolate, staticFile } from "remotion";
+import { Audio } from "@remotion/media";
 import { FleetCli } from "./components/FleetCli";
 import { MacTerminal } from "./components/MacTerminal";
 import { VscodeEditor } from "./components/VscodeEditor";
 import {
+  SCOUTS_START,
   TERMINAL_REPOSITION_START,
   SPEC_EDITOR_START,
+  ASK_USER_START,
+  ASK_USER_END,
   EDITOR_EXIT_START,
   FLEETGO_BACKGROUND,
+  FLEETGO_COMPLETE,
+  FINAL_MESSAGE_START,
   OUTRO_START,
 } from "./constants/timing";
 import { SPRING_LAYOUT } from "./constants/theme";
@@ -79,6 +85,76 @@ export const FleetDemoComposition: React.FC = () => {
   });
 
   return (
+    <>
+      {/* Background music — trimmed so the first swell (~0.8s in) aligns with SUBMIT_FRAME */}
+      <Audio
+        src={staticFile("sigmamusicart-lofi-chill-jazz-272869.mp3")}
+        loop
+        trimBefore={Math.round(0.8 * fps)}
+        volume={(f) => {
+          const compFrame = f;
+          const clamp = { extrapolateLeft: "clamp" as const, extrapolateRight: "clamp" as const };
+
+          // Base volume: fade in, hold, fade out during outro
+          const base = interpolate(
+            compFrame,
+            [0, 30, OUTRO_START, OUTRO_START + 45],
+            [0, 0.08, 0.08, 0],
+            clamp,
+          );
+
+          // Gentle volume ducking — slow, wide transitions (60-90 frames = 2-3s ramps)
+          // Duck during scouts + terminal output
+          const duckScouts = interpolate(
+            compFrame,
+            [SCOUTS_START, SCOUTS_START + 60, ASK_USER_START - 60, ASK_USER_START],
+            [1.0, 0.75, 0.75, 1.0],
+            clamp,
+          );
+          // Duck during ask-user (user reading)
+          const duckAsk = interpolate(
+            compFrame,
+            [ASK_USER_START, ASK_USER_START + 45, ASK_USER_END - 45, ASK_USER_END],
+            [1.0, 0.7, 0.7, 1.0],
+            clamp,
+          );
+          // Gentle swell for editor slide-in
+          const swellEditor = interpolate(
+            compFrame,
+            [SPEC_EDITOR_START - 15, SPEC_EDITOR_START + 30, SPEC_EDITOR_START + 60, SPEC_EDITOR_START + 90],
+            [1.0, 1.2, 1.2, 1.0],
+            clamp,
+          );
+          // Gradual swell into dashboard
+          const swellDashboard = interpolate(
+            compFrame,
+            [EDITOR_EXIT_START, FLEETGO_BACKGROUND + 45, FLEETGO_BACKGROUND + 90, FLEETGO_BACKGROUND + 120],
+            [1.0, 1.3, 1.3, 0.8],
+            clamp,
+          );
+          // Hold low during long dashboard
+          const duckDashboard = interpolate(
+            compFrame,
+            [FLEETGO_BACKGROUND + 120, FLEETGO_BACKGROUND + 150, FLEETGO_COMPLETE - 60, FLEETGO_COMPLETE],
+            [0.8, 0.8, 0.8, 1.0],
+            clamp,
+          );
+          // Gentle swell for finale
+          const swellFinale = interpolate(
+            compFrame,
+            [FLEETGO_COMPLETE, FLEETGO_COMPLETE + 45, FINAL_MESSAGE_START + 30, OUTRO_START - 30],
+            [1.0, 1.3, 1.2, 1.0],
+            clamp,
+          );
+
+          return base * duckScouts * duckAsk * swellEditor * swellDashboard * duckDashboard * swellFinale;
+        }}
+      />
+
+      {/* SFX: Pop when scouts launch */}
+      <Sequence from={SCOUTS_START} layout="none">
+        <Audio src={staticFile("sfx-pop.mp3")} volume={0.4} />
+      </Sequence>
     <AbsoluteFill
       style={{
         backgroundColor: "#e8e2d9",
@@ -139,5 +215,6 @@ export const FleetDemoComposition: React.FC = () => {
         )}
       </div>
     </AbsoluteFill>
+    </>
   );
 };
