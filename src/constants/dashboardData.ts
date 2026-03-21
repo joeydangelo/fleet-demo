@@ -43,18 +43,28 @@ export interface AgentRow {
   verdict: Verdict;
   duration: string;
   tmuxAlive: boolean;
+  /** Frame at which the current status began (for transition animations). */
+  statusStartFrame: number;
+  /** Frame at which the verdict appeared (0 if no verdict yet). */
+  verdictFrame: number;
 }
 
 export interface MailEntry {
-  prefix: string; // e.g. "[middleware → config]" or "[middleware] broadcast:"
+  prefix: string; // e.g. "[middleware → config]" or "[middleware]"
   message: string;
   relativeTime: string;
+  /** Frame at which this mail appeared (for entrance animation). */
+  appearFrame: number;
 }
 
 export interface MergeEntry {
   taskName: string;
   status: MergeStatus;
   target: string;
+  /** Frame at which this entry appeared in the queue. */
+  appearFrame: number;
+  /** Frame at which the status last changed (for badge crossfade). */
+  statusChangeFrame: number;
 }
 
 export interface DashboardSnapshot {
@@ -183,19 +193,38 @@ function frameToClockTime(frameOffset: number, fps: number): string {
 
 // ── State machine ────────────────────────────────────────────────────
 
-function resolveAgentStatus(f: number): { mw: AgentDisplayStatus; cfg: AgentDisplayStatus } {
-  let mw: AgentDisplayStatus = "pending";
-  let cfg: AgentDisplayStatus = "pending";
+interface AgentState {
+  status: AgentDisplayStatus;
+  statusStartFrame: number;
+}
 
-  if (f >= DASH_AGENTS_BOOT) { mw = "booting"; cfg = "booting"; }
-  if (f >= DASH_MW_WORKING) mw = "working";
-  if (f >= DASH_CFG_WORKING) cfg = "working";
-  if (f >= DASH_MW_REVIEW) mw = "in review";
-  if (f >= DASH_MW_DONE) mw = "done";
-  if (f >= DASH_CFG_REVIEW) cfg = "in review";
-  if (f >= DASH_CFG_DONE) cfg = "done";
+function resolveAgentState(f: number, agent: "mw" | "cfg"): AgentState {
+  // Ordered transitions: each entry is [frame, status]
+  const transitions: [number, AgentDisplayStatus][] = agent === "mw"
+    ? [
+        [0, "pending"],
+        [DASH_AGENTS_BOOT, "booting"],
+        [DASH_MW_WORKING, "working"],
+        [DASH_MW_REVIEW, "in review"],
+        [DASH_MW_DONE, "done"],
+      ]
+    : [
+        [0, "pending"],
+        [DASH_AGENTS_BOOT, "booting"],
+        [DASH_CFG_WORKING, "working"],
+        [DASH_CFG_REVIEW, "in review"],
+        [DASH_CFG_DONE, "done"],
+      ];
 
-  return { mw, cfg };
+  let status: AgentDisplayStatus = "pending";
+  let startFrame = 0;
+  for (const [frame, s] of transitions) {
+    if (f >= frame) {
+      status = s;
+      startFrame = frame;
+    }
+  }
+  return { status, statusStartFrame: startFrame };
 }
 
 function resolveVerdicts(f: number): { mw: Verdict; cfg: Verdict } {
@@ -205,46 +234,26 @@ function resolveVerdicts(f: number): { mw: Verdict; cfg: Verdict } {
   };
 }
 
+const MAIL_DEFS: { frame: number; prefix: string; message: string }[] = [
+  { frame: DASH_MAIL_1, prefix: "[middleware → config]", message: "I'll own the Redis layer — avoid importing redis directly" },
+  { frame: DASH_MAIL_2, prefix: "[config → middleware]", message: "Got it. I'll define limits in route config and read from your exports" },
+  { frame: DASH_MAIL_3, prefix: "[middleware → config]", message: "Exported RateLimiter class + checkLimit() — ready when you are" },
+  { frame: DASH_MAIL_4, prefix: "[middleware]", message: "Submitting for review — sliding window + Redis done" },
+  { frame: DASH_MAIL_5, prefix: "[config]", message: "Submitting for review — route configs + headers wired" },
+];
+
 function buildMail(f: number): MailEntry[] {
   const entries: MailEntry[] = [];
-
-  if (f >= DASH_MAIL_1) {
-    entries.push({
-      prefix: "[middleware → config]",
-      message: "I'll own the Redis layer — avoid importing redis directly",
-      relativeTime: relativeTimeStr(f, DASH_MAIL_1),
-    });
+  for (const def of MAIL_DEFS) {
+    if (f >= def.frame) {
+      entries.push({
+        prefix: def.prefix,
+        message: def.message,
+        relativeTime: relativeTimeStr(f, def.frame),
+        appearFrame: def.frame,
+      });
+    }
   }
-  if (f >= DASH_MAIL_2) {
-    entries.push({
-      prefix: "[config → middleware]",
-      message: "Got it. I'll define limits in route config and read from your exports",
-      relativeTime: relativeTimeStr(f, DASH_MAIL_2),
-    });
-  }
-  if (f >= DASH_MAIL_3) {
-    entries.push({
-      prefix: "[middleware → config]",
-      message: "Exported RateLimiter class + checkLimit() — ready when you are",
-      relativeTime: relativeTimeStr(f, DASH_MAIL_3),
-    });
-  }
-  if (f >= DASH_MAIL_4) {
-    entries.push({
-      prefix: "[middleware]",
-      message: "Submitting for review — sliding window + Redis done",
-      relativeTime: relativeTimeStr(f, DASH_MAIL_4),
-    });
-  }
-  if (f >= DASH_MAIL_5) {
-    entries.push({
-      prefix: "[config]",
-      message: "Submitting for review — route configs + headers wired",
-      relativeTime: relativeTimeStr(f, DASH_MAIL_5),
-    });
-  }
-
-  // Only show the 5 most recent
   return entries.slice(-5);
 }
 
@@ -260,31 +269,23 @@ function relativeTimeStr(currentFrame: number, eventFrame: number): string {
 function buildMerges(f: number): MergeEntry[] {
   const entries: MergeEntry[] = [];
 
-  if (f >= DASH_MERGE_MW && f < DASH_ALL_MERGED) {
-    entries.push({
-      taskName: "middleware",
-      status: f >= DASH_MW_DONE + 30 ? "merged" : "pending",
-      target: DASHBOARD_TARGET,
-    });
-  } else if (f >= DASH_ALL_MERGED) {
+  if (f >= DASH_MERGE_MW) {
     entries.push({
       taskName: "middleware",
       status: "merged",
       target: DASHBOARD_TARGET,
+      appearFrame: DASH_MERGE_MW,
+      statusChangeFrame: DASH_MERGE_MW,
     });
   }
 
-  if (f >= DASH_MERGE_CFG && f < DASH_ALL_MERGED) {
-    entries.push({
-      taskName: "config",
-      status: "pending",
-      target: DASHBOARD_TARGET,
-    });
-  } else if (f >= DASH_ALL_MERGED) {
+  if (f >= DASH_MERGE_CFG) {
     entries.push({
       taskName: "config",
       status: "merged",
       target: DASHBOARD_TARGET,
+      appearFrame: DASH_MERGE_CFG,
+      statusChangeFrame: DASH_MERGE_CFG,
     });
   }
 
@@ -293,23 +294,28 @@ function buildMerges(f: number): MergeEntry[] {
 
 /** Returns the full dashboard state for a given frame offset from FLEETGO_BACKGROUND. */
 export function getDashboardState(dashFrame: number, fps: number): DashboardSnapshot {
-  const { mw, cfg } = resolveAgentStatus(dashFrame);
+  const mwState = resolveAgentState(dashFrame, "mw");
+  const cfgState = resolveAgentState(dashFrame, "cfg");
   const verdicts = resolveVerdicts(dashFrame);
 
   const agents: AgentRow[] = [
     {
       name: "middleware",
-      status: mw,
+      status: mwState.status,
       verdict: verdicts.mw,
       duration: frameToDuration(dashFrame, DASH_MW_WORKING, DASH_MW_DONE, fps),
-      tmuxAlive: mw !== "done",
+      tmuxAlive: mwState.status !== "done",
+      statusStartFrame: mwState.statusStartFrame,
+      verdictFrame: verdicts.mw ? DASH_MW_DONE : 0,
     },
     {
       name: "config",
-      status: cfg,
+      status: cfgState.status,
       verdict: verdicts.cfg,
       duration: frameToDuration(dashFrame, DASH_CFG_WORKING, DASH_CFG_DONE, fps),
-      tmuxAlive: cfg !== "done",
+      tmuxAlive: cfgState.status !== "done",
+      statusStartFrame: cfgState.statusStartFrame,
+      verdictFrame: verdicts.cfg ? DASH_CFG_DONE : 0,
     },
   ];
 

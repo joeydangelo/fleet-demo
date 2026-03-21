@@ -146,7 +146,11 @@ function AgentHeaderRow(): React.ReactElement {
   );
 }
 
-/** Animated row — status changes trigger a brief highlight flash. */
+// ── Spring configs ────────────────────────────────────────────────────
+
+const SPRING_SMOOTH = { damping: 200 };
+
+/** Status icon + text: smooth crossfade on status change. */
 function AgentRowView({
   agent,
   dashFrame,
@@ -162,17 +166,41 @@ function AgentRowView({
     ? agent.name.slice(0, 15) + "…"
     : agent.name;
 
+  // Fade-in on status transition (~10 frames)
+  // Skip for pending/booting — same icon and color, no visual change
+  const skipTransition = agent.status === "pending" || agent.status === "booting";
+  const statusAge = dashFrame - agent.statusStartFrame;
+  const statusOpacity = skipTransition
+    ? 1
+    : interpolate(statusAge, [0, 10], [0, 1], {
+        extrapolateLeft: "clamp",
+        extrapolateRight: "clamp",
+      });
+
+  // Verdict: same crossfade as status
+  const verdictAge = agent.verdictFrame > 0 ? dashFrame - agent.verdictFrame : -1;
+  const verdictOpacity = verdictAge >= 0
+    ? interpolate(verdictAge, [0, 10], [0, 1], {
+        extrapolateLeft: "clamp",
+        extrapolateRight: "clamp",
+      })
+    : 0;
+
   return (
     <div style={{ whiteSpace: "pre" }}>
       {"  "}
-      <span style={{ ...COL_CELL, width: `${COL_STATUS_ICON}ch` }}>
+      <span style={{ ...COL_CELL, width: `${COL_STATUS_ICON}ch`, opacity: statusOpacity }}>
         <span style={{ color: style.color }}>{style.icon}</span>
       </span>
       <span style={{ ...COL_CELL, width: `${COL_NAME}ch`, color: TERM_TEXT }}>{nameDisplay}</span>
-      <span style={{ ...COL_CELL, width: `${COL_STATUS}ch`, color: style.color }}>{agent.status}</span>
+      <span style={{ ...COL_CELL, width: `${COL_STATUS}ch`, color: style.color, opacity: statusOpacity }}>
+        {agent.status}
+      </span>
       <span style={{ ...COL_CELL, width: `${COL_REVIEW}ch` }}>
         {verdictStyle ? (
-          <span style={{ color: verdictStyle.color }}>{verdictStyle.label}</span>
+          <span style={{ color: verdictStyle.color, opacity: verdictOpacity }}>
+            {verdictStyle.label}
+          </span>
         ) : null}
       </span>
       <span style={{ ...COL_CELL, width: `${COL_DURATION}ch`, color: TERM_TEXT }}>{agent.duration}</span>
@@ -205,7 +233,16 @@ function AgentsPanel({
   );
 }
 
-function MailPanel({ mail }: { mail: MailEntry[] }): React.ReactElement {
+/** Mail: each message slides in from left + fades. */
+function MailPanel({
+  mail,
+  dashFrame,
+  fps,
+}: {
+  mail: MailEntry[];
+  dashFrame: number;
+  fps: number;
+}): React.ReactElement {
   return (
     <div style={{ width: "50%", paddingLeft: 4, overflow: "hidden" }}>
       <div style={{ color: TERM_TEXT, fontWeight: 700 }}>
@@ -215,15 +252,38 @@ function MailPanel({ mail }: { mail: MailEntry[] }): React.ReactElement {
         <div style={{ color: TERM_DIM }}>No messages</div>
       )}
       {mail.map((entry, i) => (
-        <MailRowView key={i} entry={entry} />
+        <MailRowView key={i} entry={entry} dashFrame={dashFrame} fps={fps} />
       ))}
     </div>
   );
 }
 
-function MailRowView({ entry }: { entry: MailEntry }): React.ReactElement {
+function MailRowView({
+  entry,
+  dashFrame,
+  fps,
+}: {
+  entry: MailEntry;
+  dashFrame: number;
+  fps: number;
+}): React.ReactElement {
+  const age = Math.max(0, dashFrame - entry.appearFrame);
+  const entrance = spring({
+    frame: age,
+    fps,
+    config: SPRING_SMOOTH,
+  });
+  const slideX = interpolate(entrance, [0, 1], [-20, 0]);
+
   return (
-    <div style={{ whiteSpace: "pre", overflow: "hidden", textOverflow: "ellipsis", color: TERM_TEXT }}>
+    <div style={{
+      whiteSpace: "pre",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      color: TERM_TEXT,
+      opacity: entrance,
+      transform: `translateX(${slideX}px)`,
+    }}>
       <span style={{ color: TERM_DIM }}>{entry.prefix}</span>{" "}
       {entry.message}{" "}
       <span style={{ color: TERM_DIM }}>({entry.relativeTime})</span>
@@ -231,7 +291,16 @@ function MailRowView({ entry }: { entry: MailEntry }): React.ReactElement {
   );
 }
 
-function MergeQueuePanel({ merges }: { merges: MergeEntryType[] }): React.ReactElement {
+/** Merge queue: entries fade + slide in, badge crossfades on status change. */
+function MergeQueuePanel({
+  merges,
+  dashFrame,
+  fps,
+}: {
+  merges: MergeEntryType[];
+  dashFrame: number;
+  fps: number;
+}): React.ReactElement {
   return (
     <div style={{ width: "50%", paddingLeft: 8, overflow: "hidden" }}>
       <div style={{ color: TERM_TEXT, fontWeight: 700 }}>
@@ -241,18 +310,54 @@ function MergeQueuePanel({ merges }: { merges: MergeEntryType[] }): React.ReactE
         <div style={{ color: TERM_DIM }}>No merges</div>
       )}
       {merges.map((entry) => (
-        <MergeRowView key={entry.taskName} entry={entry} />
+        <MergeRowView key={entry.taskName} entry={entry} dashFrame={dashFrame} fps={fps} />
       ))}
     </div>
   );
 }
 
-function MergeRowView({ entry }: { entry: MergeEntryType }): React.ReactElement {
+function MergeRowView({
+  entry,
+  dashFrame,
+  fps,
+}: {
+  entry: MergeEntryType;
+  dashFrame: number;
+  fps: number;
+}): React.ReactElement {
   const badge = getMergeBadge(entry.status);
 
+  // Row entrance: slide in from left
+  const rowAge = Math.max(0, dashFrame - entry.appearFrame);
+  const rowEntrance = spring({
+    frame: rowAge,
+    fps,
+    config: SPRING_SMOOTH,
+  });
+  const slideX = interpolate(rowEntrance, [0, 1], [-20, 0]);
+
+  // Badge crossfade when status changes (pending → merged)
+  // Only animate if the status changed after the row first appeared
+  const statusChanged = entry.statusChangeFrame > entry.appearFrame;
+  const badgeAge = Math.max(0, dashFrame - entry.statusChangeFrame);
+  const badgeOpacity = statusChanged
+    ? interpolate(badgeAge, [0, 8], [0, 1], {
+        extrapolateLeft: "clamp",
+        extrapolateRight: "clamp",
+      })
+    : 1;
+
   return (
-    <div style={{ display: "flex", whiteSpace: "pre", gap: 8 }}>
-      <span style={{ width: "10ch", color: badge.color }}>{badge.label}</span>
+    <div style={{
+      display: "flex",
+      whiteSpace: "pre",
+      gap: 8,
+      opacity: rowEntrance,
+      transform: `translateX(${slideX}px)`,
+    }}>
+      <span style={{ width: "10ch", color: badge.color, opacity: badgeOpacity }}>
+        {badge.label}
+      </span>
       <span style={{ width: "15ch", color: TERM_TEXT }}>{entry.taskName}</span>
       <span style={{ color: TERM_DIM }}>{entry.target}</span>
     </div>
@@ -281,8 +386,8 @@ function DashboardView({
       <AgentsPanel agents={state.agents} dashFrame={dashFrame} fps={fps} />
       <HRule />
       <div style={{ display: "flex", width: "100%" }}>
-        <MailPanel mail={state.mail} />
-        <MergeQueuePanel merges={state.merges} />
+        <MailPanel mail={state.mail} dashFrame={dashFrame} fps={fps} />
+        <MergeQueuePanel merges={state.merges} dashFrame={dashFrame} fps={fps} />
       </div>
     </div>
   );

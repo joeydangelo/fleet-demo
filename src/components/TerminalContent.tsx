@@ -30,6 +30,7 @@ import {
   THIRD_PROMPT_TEXT,
   THIRD_PROMPT_SUBMIT,
   FLEETGO_BACKGROUND,
+  DASH_INK_START,
   FLEETGO_COMPLETE,
   BASH_GITLOG_START,
   BASH_TEST_START,
@@ -92,7 +93,10 @@ export const TerminalContent: React.FC = () => {
   const phase2Seconds = useElapsedSeconds(SECOND_PROMPT_SUBMIT);
   const phase2Tokens = useTokenCounter(SECOND_PROMPT_SUBMIT, PHASE2_SEGMENTS);
 
-  const phase3Seconds = useElapsedSeconds(FLEETGO_BACKGROUND, 15);
+  const phase3Seconds = useElapsedSeconds(FLEETGO_BACKGROUND, [
+    { until: FLEETGO_BACKGROUND + DASH_INK_START, speed: 1 },
+    { until: Infinity, speed: 15 },
+  ], 30);
   const phase3Tokens = useTokenCounter(FLEETGO_BACKGROUND, PHASE3_SEGMENTS, 105);
 
   const scrollOffset = useTerminalScroll();

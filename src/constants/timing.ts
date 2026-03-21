@@ -58,8 +58,8 @@ export const BASH_FLEETGO_START = THIRD_PROMPT_SUBMIT + 12;
 export const FLEETGO_BACKGROUND = BASH_FLEETGO_START + 95;
 
 // Post-background: dashboard progression, then completion cascade
-// Dashboard runs ~20s (600 frames) showing full agent lifecycle
-export const FLEETGO_COMPLETE = FLEETGO_BACKGROUND + 600;
+// Dashboard runs ~22s (660 frames) showing full agent lifecycle
+export const FLEETGO_COMPLETE = FLEETGO_BACKGROUND + 660;
 export const BASH_GITLOG_START = FLEETGO_COMPLETE + 35;
 export const BASH_TEST_START = BASH_GITLOG_START + 30;
 export const FINAL_MESSAGE_START = BASH_TEST_START + 30;
@@ -69,6 +69,7 @@ export const BG_COMPLETE = TIMER3_START + 20;
 // ── Dashboard phase offsets (relative to FLEETGO_BACKGROUND) ─────────
 // These control the agent lifecycle progression in the MacTerminal
 export const DASH_TYPING_DONE = 66; // ~2.2s for typing "fleet dashboard"
+export const DASH_INK_START = 81; // typing done + 15 frame delay before Ink renders
 export const DASH_AGENTS_BOOT = 30; // agents appear as booting
 export const DASH_MW_WORKING = 80; // middleware starts working
 export const DASH_CFG_WORKING = 110; // config starts working
@@ -77,10 +78,10 @@ export const DASH_MAIL_2 = 180; // second mail
 export const DASH_MAIL_3 = 230; // third mail (reply)
 export const DASH_MAIL_4 = 285; // middleware announces submitting for review
 export const DASH_MW_REVIEW = 300; // middleware enters review
-export const DASH_MW_DONE = 380; // middleware done + PASS
-export const DASH_MERGE_MW = 395; // middleware enters merge queue
-export const DASH_MAIL_5 = 405; // config announces submitting for review
-export const DASH_CFG_REVIEW = 420; // config enters review
-export const DASH_CFG_DONE = 490; // config done + PASS
-export const DASH_MERGE_CFG = 505; // config merged
-export const DASH_ALL_MERGED = 530; // both merged
+export const DASH_MW_DONE = 360; // middleware done + PASS
+export const DASH_MERGE_MW = 400; // middleware merged (skip pending, show merged directly)
+export const DASH_MAIL_5 = 440; // config announces submitting for review
+export const DASH_CFG_REVIEW = 470; // config enters review
+export const DASH_CFG_DONE = 520; // config done + PASS
+export const DASH_MERGE_CFG = 550; // config merged
+export const DASH_ALL_MERGED = 550; // both merged
