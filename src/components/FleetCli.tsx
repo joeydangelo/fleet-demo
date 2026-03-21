@@ -101,8 +101,8 @@ export const FleetCli: React.FC = () => {
   return (
     <div
       style={{
-        width: 520,
-        height: 580,
+        width: 560,
+        height: 620,
         display: "flex",
         flexDirection: "column",
         borderRadius: 12,
