@@ -118,8 +118,8 @@ export const TerminalContent: React.FC = () => {
         )}
       </FadeIn>
 
-      <ToolStep label="Bash(assess-work)" start={BASH_ASSESS_START} collapsedLines={67} />
-      <ToolStep label="Bash(codebase-research)" start={BASH_GUIDELINES_START} collapsedLines={30} />
+      <ToolStep label="Bash(fleet shortcut assess-work)" start={BASH_ASSESS_START} collapsedLines={67} />
+      <ToolStep label="Bash(fleet guidelines codebase-research)" start={BASH_GUIDELINES_START} collapsedLines={30} />
 
       {frame >= SCOUTS_START && (
         <div style={{ marginBottom: 4, marginTop: 12 }}>
@@ -176,9 +176,9 @@ export const TerminalContent: React.FC = () => {
         )}
       </FadeIn>
 
-      <ToolStep label="Bash(write-spec)" start={BASH_WRITESPEC_START} collapsedLines={67} />
-      <ToolStep label="Bash(spec-design)" start={BASH_SPECDESIGN_START} collapsedLines={44} />
-      <ToolStep label="Bash(template plan-spec)" start={BASH_TEMPLATE_START} collapsedLines={37} />
+      <ToolStep label="Bash(fleet shortcut write-spec)" start={BASH_WRITESPEC_START} collapsedLines={67} />
+      <ToolStep label="Bash(fleet guidelines spec-design)" start={BASH_SPECDESIGN_START} collapsedLines={44} />
+      <ToolStep label="Bash(fleet template plan-spec)" start={BASH_TEMPLATE_START} collapsedLines={37} />
 
       <FadeIn start={ASK_USER_END} style={{ marginBottom: 4, marginTop: 12 }}>
         <ToolHeader label="User answered Claude's questions:" />
@@ -248,9 +248,9 @@ export const TerminalContent: React.FC = () => {
         </div>
       )}
 
-      <ToolStep label="Bash(decompose-work)" start={BASH_DECOMPOSE_START} collapsedLines={57} />
-      <ToolStep label="Bash(task-splitting)" start={BASH_TASKSPLIT_START} collapsedLines={38} />
-      <ToolStep label="Bash(fleet-yaml)" start={BASH_FLEETYAML_START} collapsedLines={56} />
+      <ToolStep label="Bash(fleet shortcut decompose-work)" start={BASH_DECOMPOSE_START} collapsedLines={57} />
+      <ToolStep label="Bash(fleet guidelines task-splitting)" start={BASH_TASKSPLIT_START} collapsedLines={38} />
+      <ToolStep label="Bash(fleet template fleet-yaml)" start={BASH_FLEETYAML_START} collapsedLines={56} />
 
       <FadeIn
         start={YAML_WRITE_START}
