@@ -1,6 +1,16 @@
-export const MONO = '"SF Mono", "Monaco", "Menlo", "Consolas", monospace';
-export const SYSTEM_FONT =
-  '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif';
+import { loadFont as loadNotoMono } from "@remotion/google-fonts/NotoSansMono";
+import { loadFont as loadNotoSans } from "@remotion/google-fonts/NotoSans";
+
+const { fontFamily: notoMono } = loadNotoMono("normal", {
+  weights: ["400", "700"],
+});
+const { fontFamily: notoSans } = loadNotoSans("normal", {
+  weights: ["400", "500", "700"],
+  subsets: ["latin"],
+});
+
+export const MONO = `${notoMono}, monospace`;
+export const SYSTEM_FONT = `${notoSans}, sans-serif`;
 
 // Colors matching Claude CLI light theme
 export const GREEN = "#7fa887";

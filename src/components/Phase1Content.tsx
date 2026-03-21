@@ -139,11 +139,11 @@ export function Phase1Content({
           }}
         >
           <div>
-            ⎿ · Algorithm →{" "}
+            └ · Algorithm →{" "}
             <span style={{ color: GREEN }}>Sliding window (Recommended)</span>
           </div>
           <div>
-            ⎿ · Scope →{" "}
+            └ · Scope →{" "}
             <span style={{ color: GREEN }}>Per-user + per-endpoint (Recommended)</span>
           </div>
         </div>

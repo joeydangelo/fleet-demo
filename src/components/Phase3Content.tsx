@@ -106,11 +106,11 @@ export function Phase3Content({
         {frame >= BASH_GITLOG_START + 10 && (
           <div style={{ paddingLeft: TOOL_INDENT, fontSize: 12, lineHeight: 1.6 }}>
             <div style={{ color: DIM }}>
-              ⎿ <span style={{ color: ORANGE }}>a3f1c92</span>{" "}
+              └ <span style={{ color: ORANGE }}>a3f1c92</span>{" "}
               <span style={{ color: TEXT }}>feat: add sliding-window rate limiter middleware</span>
             </div>
             <div style={{ color: DIM }}>
-              ⎿ <span style={{ color: ORANGE }}>e7d4a18</span>{" "}
+              └ <span style={{ color: ORANGE }}>e7d4a18</span>{" "}
               <span style={{ color: TEXT }}>feat: add per-route rate limit config and headers</span>
             </div>
           </div>
@@ -122,7 +122,7 @@ export function Phase3Content({
         {frame >= BASH_TEST_START + 10 && (
           <div style={{ paddingLeft: TOOL_INDENT, fontSize: 12, lineHeight: 1.6 }}>
             <div style={{ color: DIM }}>
-              ⎿ <span style={{ color: GREEN }}>✓</span>{" "}
+              └ <span style={{ color: GREEN }}>✓</span>{" "}
               <span style={{ color: GRAY }}>tests/rate-limit.test.ts (18 tests) 412ms</span>
             </div>
           </div>

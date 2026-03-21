@@ -197,7 +197,7 @@ export const FleetCli: React.FC = () => {
           }}
         >
           <span style={{ whiteSpace: "pre" }}>
-            <span style={{ color: "#FF6D84" }}>⏵⏵ bypass permissions on</span>
+            <span style={{ color: "#FF6D84" }}>▶▶ bypass permissions on</span>
             {frame >= FLEETGO_BACKGROUND && frame < BG_COMPLETE && <BashStatusBadge />}
           </span>
         </div>

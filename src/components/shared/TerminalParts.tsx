@@ -21,14 +21,14 @@ export const BlinkingDot: React.FC<{ color: string }> = ({ color }) => {
 
 export const CollapsedOutput: React.FC<{ lines: number }> = ({ lines }) => (
   <div style={{ paddingLeft: TOOL_INDENT, color: DIM, fontSize: 12 }}>
-    <span style={{ marginRight: 4 }}>{"\u23bf"}</span>
+    <span style={{ marginRight: 4 }}>{"\u2514"}</span>
     <span>{"\u2026"} +{lines} lines (ctrl+o to expand)</span>
   </div>
 );
 
 export const SubLine: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <div style={{ paddingLeft: TOOL_INDENT, color: GRAY, fontSize: 12 }}>
-    <span style={{ marginRight: 4 }}>{"\u23bf"}</span>
+    <span style={{ marginRight: 4 }}>{"\u2514"}</span>
     {children}
   </div>
 );
