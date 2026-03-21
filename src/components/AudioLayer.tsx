@@ -1,6 +1,6 @@
 import { Sequence, interpolate, staticFile } from "remotion";
 import { Audio } from "@remotion/media";
-import { uiSwitch } from "@remotion/sfx";
+import { uiSwitch, whip, whoosh } from "@remotion/sfx";
 import {
   SUBMIT_FRAME,
   SCOUTS_START,
@@ -124,22 +124,22 @@ export function AudioLayer({ fps }: { fps: number }): React.ReactElement {
 
       {/* SFX: Swoosh when editor slides in */}
       <Sequence from={SPEC_EDITOR_START} layout="none">
-        <Audio src={staticFile("whoosh.wav")} volume={0.5} />
+        <Audio src={whoosh} volume={0.5} />
       </Sequence>
 
       {/* SFX: Whoosh when MacTerminal slides in */}
       <Sequence from={FLEETGO_BACKGROUND} layout="none">
-        <Audio src={staticFile("whoosh.wav")} volume={0.5} />
+        <Audio src={whoosh} volume={0.5} />
       </Sequence>
 
       {/* SFX: Whip when editor slides out */}
       <Sequence from={EDITOR_EXIT_START} layout="none">
-        <Audio src={staticFile("whip.wav")} volume={0.5} />
+        <Audio src={whip} volume={0.5} />
       </Sequence>
 
       {/* SFX: Whip when outro scales down */}
       <Sequence from={OUTRO_START} layout="none">
-        <Audio src={staticFile("whip.wav")} volume={0.5} />
+        <Audio src={whip} volume={0.5} />
       </Sequence>
 
       {/* SFX: Keyboard clicks while typing "fleet dashboard" — one per character */}
