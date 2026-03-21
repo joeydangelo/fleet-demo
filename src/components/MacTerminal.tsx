@@ -124,6 +124,26 @@ function HeaderBar({ now }: { now: string }): React.ReactElement {
   );
 }
 
+const COL_CELL: React.CSSProperties = {
+  display: "inline-block",
+  whiteSpace: "pre",
+};
+
+/** Matches the Ink header: 2-space indent, then columns at the same widths as data rows. */
+function AgentHeaderRow(): React.ReactElement {
+  return (
+    <div style={{ color: TERM_DIM, whiteSpace: "pre" }}>
+      {"  "}
+      <span style={{ ...COL_CELL, width: `${COL_STATUS_ICON}ch` }}>{"St"}</span>
+      <span style={{ ...COL_CELL, width: `${COL_NAME}ch` }}>{"Name"}</span>
+      <span style={{ ...COL_CELL, width: `${COL_STATUS}ch` }}>{"Status"}</span>
+      <span style={{ ...COL_CELL, width: `${COL_REVIEW}ch` }}>{"Review"}</span>
+      <span style={{ ...COL_CELL, width: `${COL_DURATION}ch` }}>{"Duration"}</span>
+      <span style={{ ...COL_CELL, width: `${COL_TMUX}ch` }}>{"Tmux"}</span>
+    </div>
+  );
+}
+
 function AgentRowView({ agent }: { agent: AgentRow }): React.ReactElement {
   const style = getStatusStyle(agent.status);
   const verdictStyle = getVerdictStyle(agent.verdict);
@@ -132,21 +152,21 @@ function AgentRowView({ agent }: { agent: AgentRow }): React.ReactElement {
     : agent.name;
 
   return (
-    <div style={{ display: "flex", whiteSpace: "pre" }}>
-      <span style={{ width: `${COL_STATUS_ICON}ch` }}>
-        {"  "}
+    <div style={{ whiteSpace: "pre" }}>
+      {"  "}
+      <span style={{ ...COL_CELL, width: `${COL_STATUS_ICON}ch` }}>
         <span style={{ color: style.color }}>{style.icon}</span>
       </span>
-      <span style={{ width: `${COL_NAME}ch`, color: TERM_TEXT }}>{nameDisplay}</span>
-      <span style={{ width: `${COL_STATUS}ch`, color: style.color }}>{agent.status}</span>
-      <span style={{ width: `${COL_REVIEW}ch` }}>
+      <span style={{ ...COL_CELL, width: `${COL_NAME}ch`, color: TERM_TEXT }}>{nameDisplay}</span>
+      <span style={{ ...COL_CELL, width: `${COL_STATUS}ch`, color: style.color }}>{agent.status}</span>
+      <span style={{ ...COL_CELL, width: `${COL_REVIEW}ch` }}>
         {verdictStyle ? (
           <span style={{ color: verdictStyle.color }}>{verdictStyle.label}</span>
         ) : null}
       </span>
-      <span style={{ width: `${COL_DURATION}ch`, color: TERM_TEXT }}>{agent.duration}</span>
-      <span style={{ width: `${COL_TMUX}ch` }}>
-        {agent.tmuxAlive && <span style={{ color: "#7fa887" }}>●</span>}
+      <span style={{ ...COL_CELL, width: `${COL_DURATION}ch`, color: TERM_TEXT }}>{agent.duration}</span>
+      <span style={{ ...COL_CELL, width: `${COL_TMUX}ch` }}>
+        {agent.tmuxAlive && <span style={{ color: "#55b45a" }}>●</span>}
       </span>
     </div>
   );
@@ -158,9 +178,7 @@ function AgentsPanel(): React.ReactElement {
       <div style={{ color: TERM_TEXT, fontWeight: 700 }}>
         Agents ({AGENTS.length})
       </div>
-      <div style={{ color: TERM_DIM, whiteSpace: "pre" }}>
-        {"  St  Name             Status        Review   Duration   Tmux"}
-      </div>
+      <AgentHeaderRow />
       {AGENTS.map((agent) => (
         <AgentRowView key={agent.name} agent={agent} />
       ))}
@@ -170,7 +188,7 @@ function AgentsPanel(): React.ReactElement {
 
 function MailPanel(): React.ReactElement {
   return (
-    <div style={{ flex: 1, paddingLeft: 4 }}>
+    <div style={{ width: "50%", paddingLeft: 4, overflow: "hidden" }}>
       <div style={{ color: TERM_TEXT, fontWeight: 700 }}>
         Mail ({MAIL_ENTRIES.length})
       </div>
@@ -186,10 +204,8 @@ function MailPanel(): React.ReactElement {
 
 function MailRowView({ entry }: { entry: MailEntry }): React.ReactElement {
   return (
-    <div style={{ whiteSpace: "pre", overflow: "hidden", textOverflow: "ellipsis" }}>
-      <span style={{ color: "#6a9bcc" }}>[{entry.agent}]</span>
-      <span style={{ color: TERM_TEXT }}> {entry.message}</span>
-      <span style={{ color: TERM_DIM }}> ({entry.relativeTime})</span>
+    <div style={{ whiteSpace: "pre", overflow: "hidden", textOverflow: "ellipsis", color: TERM_TEXT }}>
+      [{entry.agent}] {entry.message} ({entry.relativeTime})
     </div>
   );
 }
@@ -198,7 +214,7 @@ function MergeQueuePanel(): React.ReactElement {
   const entries = MERGE_ENTRIES;
 
   return (
-    <div style={{ flex: 1, paddingLeft: 8 }}>
+    <div style={{ width: "50%", paddingLeft: 8, overflow: "hidden" }}>
       <div style={{ color: TERM_TEXT, fontWeight: 700 }}>
         Merge Queue ({entries.length})
       </div>
@@ -232,12 +248,12 @@ function DashboardView({ dashFrame, fps }: { dashFrame: number; fps: number }): 
   });
 
   return (
-    <div style={{ opacity: entrance, marginTop: 8, fontSize: 12, lineHeight: 1.5 }}>
+    <div style={{ opacity: entrance, marginTop: 8, fontSize: 12, lineHeight: 1.5, width: "100%", overflow: "hidden" }}>
       <HeaderBar now="3:42:18 PM" />
       <HRule />
       <AgentsPanel />
       <HRule />
-      <div style={{ display: "flex" }}>
+      <div style={{ display: "flex", width: "100%" }}>
         <MailPanel />
         <MergeQueuePanel />
       </div>
