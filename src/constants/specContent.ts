@@ -103,6 +103,10 @@ export const SPEC_LINES: SpecLine[] = [
     text: '    - "src/config/rateLimits.ts"',
     style: "code-value",
   },
+  {
+    text: '    - "src/routes/rateLimitStatus.ts"',
+    style: "code-value",
+  },
   { text: "```", style: "codeblock" },
 ];
 

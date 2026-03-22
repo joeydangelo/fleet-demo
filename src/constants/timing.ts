@@ -55,8 +55,8 @@ export const BASH_FLEETGO_START = THIRD_PROMPT_SUBMIT + 12;
 export const FLEETGO_BACKGROUND = BASH_FLEETGO_START + 95;
 
 // Post-background: dashboard progression, then completion cascade
-// Dashboard runs ~22s (660 frames) showing full agent lifecycle
-export const FLEETGO_COMPLETE = FLEETGO_BACKGROUND + 660;
+// Dashboard runs ~31s (940 frames) showing full agent lifecycle (3 agents)
+export const FLEETGO_COMPLETE = FLEETGO_BACKGROUND + 940;
 export const BASH_GITLOG_START = FLEETGO_COMPLETE + 35;
 export const BASH_TEST_START = BASH_GITLOG_START + 30;
 export const FINAL_MESSAGE_START = BASH_TEST_START + 30;
@@ -70,6 +70,7 @@ export const DASH_INK_START = 81; // typing done + 15 frame delay before Ink ren
 export const DASH_AGENTS_BOOT = 30; // agents appear as booting
 export const DASH_MW_WORKING = 80; // middleware starts working
 export const DASH_CFG_WORKING = 110; // config starts working
+export const DASH_API_WORKING = 140; // api starts working (parallel with config)
 export const DASH_MAIL_1 = 130; // first inter-agent mail
 export const DASH_MAIL_2 = 180; // second mail
 
@@ -82,13 +83,18 @@ export const DASH_BROADCAST = 209; // broadcast appears in dashboard mail (~0.5s
 export const DASH_MAIL_3 = 240; // third mail (reply)
 export const DASH_MAIL_4 = 285; // middleware announces submitting for review
 export const DASH_MW_REVIEW = 300; // middleware enters review
-export const DASH_MW_DONE = 360; // middleware done + PASS
-export const DASH_MERGE_MW = 400; // middleware merged (skip pending, show merged directly)
-export const DASH_MAIL_5 = 440; // config announces submitting for review
-export const DASH_CFG_REVIEW = 470; // config enters review
-export const DASH_CFG_DONE = 520; // config done + PASS
-export const DASH_MERGE_CFG = 550; // config merged
-export const DASH_ALL_MERGED = DASH_MERGE_CFG; // both merged
+export const DASH_MW_DONE = 390; // middleware done + PASS
+export const DASH_MERGE_MW = 430; // middleware merged
+export const DASH_MAIL_6 = 350; // api → middleware interface message
+export const DASH_MAIL_5 = 485; // config announces submitting for review
+export const DASH_CFG_REVIEW = 500; // config enters review
+export const DASH_CFG_DONE = 590; // config done + PASS
+export const DASH_MERGE_CFG = 630; // config merged
+export const DASH_MAIL_7 = 685; // api announces submitting for review
+export const DASH_API_REVIEW = 700; // api enters review
+export const DASH_API_DONE = 790; // api done + PASS
+export const DASH_MERGE_API = 830; // api merged
+export const DASH_ALL_MERGED = DASH_MERGE_API; // all three merged
 
 // Outro — everything scales down and disappears
 export const OUTRO_START = BG_COMPLETE + 20;

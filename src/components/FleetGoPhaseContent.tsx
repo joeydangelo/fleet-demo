@@ -88,7 +88,7 @@ export function FleetGoPhaseContent({
           <SummaryBlock>
             <div style={{ fontSize: 12, color: TEXT, lineHeight: 1.8 }}>
               <div>- up — created worktrees and branches</div>
-              <div>- launch — spawned 2 builder agents</div>
+              <div>- launch — spawned 3 builder agents</div>
               <FadeIn start={FLEETGO_COMPLETE + 18} style={{}}>
                 <div>- watch — agents committed, submitted for review</div>
                 <div>- merge — merged clean into feat/rate-limiting</div>
@@ -113,6 +113,10 @@ export function FleetGoPhaseContent({
               └ <span style={{ color: ORANGE }}>e7d4a18</span>{" "}
               <span style={{ color: TEXT }}>feat: add per-route rate limit config and headers</span>
             </div>
+            <div style={{ color: DIM }}>
+              └ <span style={{ color: ORANGE }}>c9b2f51</span>{" "}
+              <span style={{ color: TEXT }}>feat: add rate limit status endpoint</span>
+            </div>
           </div>
         )}
       </FadeIn>
@@ -123,7 +127,7 @@ export function FleetGoPhaseContent({
           <div style={{ paddingLeft: TOOL_INDENT, fontSize: 12, lineHeight: 1.6 }}>
             <div style={{ color: DIM }}>
               └ <span style={{ color: GREEN }}>✓</span>{" "}
-              <span style={{ color: GRAY }}>tests/rate-limit.test.ts (18 tests) 412ms</span>
+              <span style={{ color: GRAY }}>tests/rate-limit.test.ts (24 tests) 487ms</span>
             </div>
           </div>
         )}
@@ -135,9 +139,9 @@ export function FleetGoPhaseContent({
       >
         <SummaryBlock>
           <SummaryParagraph>
-            All 18 tests pass. Both tasks merged into feat/rate-limiting —
+            All 24 tests pass. All tasks merged into feat/rate-limiting —
             middleware handles sliding window + Redis, config wires per-route
-            limits and response headers.
+            limits, api exposes the client-facing status endpoint.
           </SummaryParagraph>
           <SummaryParagraph>
             Ready for fleet finish-branch to integrate into main.
@@ -146,7 +150,7 @@ export function FleetGoPhaseContent({
       </FadeIn>
 
       <FadeIn start={TIMER3_START} style={{ marginTop: 12 }}>
-        <CrunchedTimer duration="13m 35s" />
+        <CrunchedTimer duration="14m 22s" />
       </FadeIn>
 
       <FadeIn start={BG_COMPLETE} style={{ marginTop: 12 }}>

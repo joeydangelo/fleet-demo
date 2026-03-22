@@ -39,7 +39,7 @@ export const FleetGoBlock: React.FC = () => {
           <div style={{ color: DIM }}>
             {"  "}│{"  "}
             <span style={{ color: GRAY }}>
-              target: feat/rate-limiting · 2 tasks
+              target: feat/rate-limiting · 3 tasks
             </span>
           </div>
           <FadeIn start={BASH_FLEETGO_START + 18} style={{}}>
@@ -49,7 +49,7 @@ export const FleetGoBlock: React.FC = () => {
             </div>
             <div style={{ color: DIM }}>
               {"  "}│{"  "}
-              <span style={{ color: GRAY }}>middleware · config</span>
+              <span style={{ color: GRAY }}>middleware · config · api</span>
             </div>
           </FadeIn>
           <FadeIn start={BASH_FLEETGO_START + 36} style={{}}>
@@ -59,7 +59,7 @@ export const FleetGoBlock: React.FC = () => {
             </div>
             <div style={{ color: DIM }}>
               {"  "}│{"  "}
-              <span style={{ color: GRAY }}>2 agents spawned</span>
+              <span style={{ color: GRAY }}>3 agents spawned</span>
             </div>
           </FadeIn>
           <FadeIn start={BASH_FLEETGO_START + 50} style={{}}>

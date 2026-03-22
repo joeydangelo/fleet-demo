@@ -47,7 +47,7 @@ export function SpecPhaseContent({
         style={{ marginBottom: 4, marginTop: 8 }}
       >
         <ToolHeader label="Write(.fleet/fleet.yaml)" />
-        <SubLine>Wrote 46 lines</SubLine>
+        <SubLine>Wrote 64 lines</SubLine>
       </FadeIn>
 
       <FadeIn
@@ -56,9 +56,9 @@ export function SpecPhaseContent({
       >
         <SummaryBlock>
           <SummaryParagraph>
-            Two parallel tasks — middleware owns the sliding window limiter
-            and Redis layer, config owns route-level limit definitions and
-            response headers.
+            Three tasks — middleware owns the sliding window limiter and Redis
+            layer, config owns route-level limit definitions, api owns the
+            client-facing status endpoint.
           </SummaryParagraph>
           <SummaryParagraph>
             Ready to run fleet go to launch the builders. Want me to kick

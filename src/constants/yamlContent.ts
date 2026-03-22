@@ -107,6 +107,51 @@ export const YAML_LINES: YamlLine[] = [
     style: "prompt-body",
   },
   { text: "      endpoints.", style: "prompt-body" },
+  { text: "", style: "blank" },
+  { text: "  api:", style: "key" },
+  { text: "    focus:", style: "key" },
+  { text: "      - src/routes/rateLimitStatus.ts", style: "list-item" },
+  {
+    text: "      - src/routes/rateLimitStatus.test.ts",
+    style: "list-item",
+  },
+  { text: "    depends_on: middleware", style: "key-value" },
+  { text: "    prompt: |", style: "key-value" },
+  {
+    text: "      The status endpoint lets clients check their current",
+    style: "prompt-body",
+  },
+  {
+    text: "      rate limit usage before hitting a 429.",
+    style: "prompt-body",
+  },
+  { text: "", style: "blank" },
+  {
+    text: "      Import RateLimitResult from src/types/rateLimit.ts.",
+    style: "prompt-body",
+  },
+  {
+    text: "      Build GET /v1/rate-limit/status — returns current",
+    style: "prompt-body",
+  },
+  {
+    text: "      limit, remaining, and reset time per endpoint for the",
+    style: "prompt-body",
+  },
+  {
+    text: "      authenticated user. Use checkLimit() in read-only mode",
+    style: "prompt-body",
+  },
+  { text: "      (query without incrementing the counter).", style: "prompt-body" },
+  { text: "", style: "blank" },
+  {
+    text: "      Acceptance: returns 200 with limit/remaining/reset,",
+    style: "prompt-body",
+  },
+  {
+    text: "      401 without auth, response matches X-RateLimit-* headers.",
+    style: "prompt-body",
+  },
 ];
 
 export type YamlLineStyle =

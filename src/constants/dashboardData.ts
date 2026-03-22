@@ -8,6 +8,7 @@ import {
   DASH_AGENTS_BOOT,
   DASH_MW_WORKING,
   DASH_CFG_WORKING,
+  DASH_API_WORKING,
   DASH_MAIL_1,
   DASH_MAIL_2,
   DASH_BROADCAST,
@@ -18,8 +19,13 @@ import {
   DASH_MERGE_MW,
   DASH_CFG_REVIEW,
   DASH_MAIL_5,
+  DASH_MAIL_6,
   DASH_CFG_DONE,
   DASH_MERGE_CFG,
+  DASH_MAIL_7,
+  DASH_API_REVIEW,
+  DASH_API_DONE,
+  DASH_MERGE_API,
   DASH_ALL_MERGED,
 } from "./timing";
 import {
@@ -120,8 +126,8 @@ interface AgentState {
 
 type Transition = { frame: number; status: AgentDisplayStatus };
 
-// Per-agent frames that differ between middleware and config
-const AGENT_TRANSITIONS: Record<"mw" | "cfg", Transition[]> = {
+// Per-agent frames that differ between middleware, config, and api
+const AGENT_TRANSITIONS: Record<"mw" | "cfg" | "api", Transition[]> = {
   mw: [
     { frame: 0, status: "pending" },
     { frame: DASH_AGENTS_BOOT, status: "booting" },
@@ -136,9 +142,16 @@ const AGENT_TRANSITIONS: Record<"mw" | "cfg", Transition[]> = {
     { frame: DASH_CFG_REVIEW, status: "in review" },
     { frame: DASH_CFG_DONE, status: "done" },
   ],
+  api: [
+    { frame: 0, status: "pending" },
+    { frame: DASH_AGENTS_BOOT, status: "booting" },
+    { frame: DASH_API_WORKING, status: "working" },
+    { frame: DASH_API_REVIEW, status: "in review" },
+    { frame: DASH_API_DONE, status: "done" },
+  ],
 };
 
-function resolveAgentState(f: number, agent: "mw" | "cfg"): AgentState {
+function resolveAgentState(f: number, agent: "mw" | "cfg" | "api"): AgentState {
   let status: AgentDisplayStatus = "pending";
   let startFrame = 0;
   for (const t of AGENT_TRANSITIONS[agent]) {
@@ -150,10 +163,11 @@ function resolveAgentState(f: number, agent: "mw" | "cfg"): AgentState {
   return { status, statusStartFrame: startFrame };
 }
 
-function resolveVerdicts(f: number): { mw: Verdict; cfg: Verdict } {
+function resolveVerdicts(f: number): { mw: Verdict; cfg: Verdict; api: Verdict } {
   return {
     mw: f >= DASH_MW_DONE ? "pass" : null,
     cfg: f >= DASH_CFG_DONE ? "pass" : null,
+    api: f >= DASH_API_DONE ? "pass" : null,
   };
 }
 
@@ -163,7 +177,9 @@ const MAIL_DEFS: { frame: number; prefix: string; message: string }[] = [
   { frame: DASH_BROADCAST, prefix: "[orchestrator]", message: "remember when this required six engineers and a PM named Doug?" },
   { frame: DASH_MAIL_3, prefix: "[middleware → config]", message: "Exported RateLimiter class + checkLimit() — ready when you are" },
   { frame: DASH_MAIL_4, prefix: "[middleware]", message: "Submitting for review — sliding window + Redis done" },
+  { frame: DASH_MAIL_6, prefix: "[api → middleware]", message: "Importing checkLimit() — need remaining + reset for the status response" },
   { frame: DASH_MAIL_5, prefix: "[config]", message: "Submitting for review — route configs + headers wired" },
+  { frame: DASH_MAIL_7, prefix: "[api]", message: "Submitting for review — status endpoint + usage response done" },
 ];
 
 function buildMail(f: number): MailEntry[] {
@@ -213,6 +229,16 @@ function buildMerges(f: number): MergeEntry[] {
     });
   }
 
+  if (f >= DASH_MERGE_API) {
+    entries.push({
+      taskName: "api",
+      status: "merged",
+      target: DASHBOARD_TARGET,
+      appearFrame: DASH_MERGE_API,
+      statusChangeFrame: DASH_MERGE_API,
+    });
+  }
+
   return entries;
 }
 
@@ -220,6 +246,7 @@ function buildMerges(f: number): MergeEntry[] {
 export function getDashboardState(dashFrame: number, fps: number): DashboardSnapshot {
   const mwState = resolveAgentState(dashFrame, "mw");
   const cfgState = resolveAgentState(dashFrame, "cfg");
+  const apiState = resolveAgentState(dashFrame, "api");
   const verdicts = resolveVerdicts(dashFrame);
 
   const agents: AgentRow[] = [
@@ -240,6 +267,15 @@ export function getDashboardState(dashFrame: number, fps: number): DashboardSnap
       tmuxAlive: cfgState.status !== "done",
       statusStartFrame: cfgState.statusStartFrame,
       verdictFrame: verdicts.cfg ? DASH_CFG_DONE : 0,
+    },
+    {
+      name: "api",
+      status: apiState.status,
+      verdict: verdicts.api,
+      duration: frameToDuration(dashFrame, DASH_API_WORKING, DASH_API_DONE, fps),
+      tmuxAlive: apiState.status !== "done",
+      statusStartFrame: apiState.statusStartFrame,
+      verdictFrame: verdicts.api ? DASH_API_DONE : 0,
     },
   ];
 
