@@ -1,22 +1,20 @@
-# Remotion video
+# Fleet Demo
 
-<p align="center">
-  <a href="https://github.com/remotion-dev/logo">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://github.com/remotion-dev/logo/raw/main/animated-logo-banner-dark.apng">
-      <img alt="Animated Remotion Logo" src="https://github.com/remotion-dev/logo/raw/main/animated-logo-banner-light.gif">
-    </picture>
-  </a>
-</p>
+A [Remotion](https://github.com/remotion-dev/remotion) demo video for [fleet](https://github.com/joeydangelo/fleet) — from task input to parallel agent execution and merge.
 
-Welcome to your Remotion project!
+![Preview](public/preview.png)
+
+## Prerequisites
+
+- [Node.js](https://nodejs.org) >= 20
+- npm
 
 ## Commands
 
 **Install Dependencies**
 
 ```console
-npm i
+npm install
 ```
 
 **Start Preview**
@@ -25,7 +23,7 @@ npm i
 npm run dev
 ```
 
-**Render video**
+**Render MP4 video**
 
 ```console
 npx remotion render
@@ -36,19 +34,3 @@ npx remotion render
 ```console
 npx remotion upgrade
 ```
-
-## Docs
-
-Get started with Remotion by reading the [fundamentals page](https://www.remotion.dev/docs/the-fundamentals).
-
-## Help
-
-We provide help on our [Discord server](https://discord.gg/6VzzNDwUwV).
-
-## Issues
-
-Found an issue with Remotion? [File an issue here](https://github.com/remotion-dev/remotion/issues/new).
-
-## License
-
-Note that for some entities a company license is needed. [Read the terms here](https://github.com/remotion-dev/remotion/blob/main/LICENSE.md).
